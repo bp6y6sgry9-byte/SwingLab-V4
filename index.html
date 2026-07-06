@@ -1,0 +1,2774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Swing Lab — Swing Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0D10;
+    --panel:#15181C;
+    --panel-2:#1B1F24;
+    --line:#2A2F35;
+    --text:#F2EFEA;
+    --text-dim:#9AA0A6;
+    --text-faint:#5C636B;
+    --clay:#C1602E;
+    --clay-dim:#7A4023;
+    --grass:#5C8A6E;
+    --blue:#3FA7FF;
+    --stitch:#A23B3B;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--clay);color:#fff;}
+  /* ---------- stitch motif ---------- */
+  .stitch-divider{
+    height:14px;
+    margin:0 0;
+    background-image: repeating-linear-gradient(
+      100deg,
+      transparent 0px, transparent 10px,
+      var(--clay-dim) 10px, var(--clay-dim) 11px,
+      transparent 11px, transparent 16px
+    ),
+    repeating-linear-gradient(
+      80deg,
+      transparent 0px, transparent 10px,
+      var(--clay-dim) 10px, var(--clay-dim) 11px,
+      transparent 11px, transparent 16px
+    );
+    background-position: 0 4px, 0 9px;
+    background-size: 22px 2px;
+    opacity:.55;
+  }
+  header{
+    padding:28px 32px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:24px;
+  }
+  .header-title{
+    flex:1;
+    min-width:0;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--clay);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1{
+    font-family:'Oswald', sans-serif;
+    font-weight:600;
+    font-size:32px;
+    letter-spacing:.01em;
+    margin:0;
+    text-transform:uppercase;
+  }
+  .sub{
+    color:var(--text-dim);
+    font-size:14px;
+    margin-top:6px;
+    max-width:680px;
+    line-height:1.5;
+  }
+  /* ---------- swing score badge ---------- */
+  .swing-score-badge{
+    flex-shrink:0;
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+    padding:4px 6px;
+    border-radius:12px;
+    transition:background .15s ease;
+  }
+  .swing-score-badge:hover{
+    background:var(--panel);
+  }
+  .ssb-ring{
+    position:relative;
+    width:66px;
+    height:66px;
+    border-radius:50%;
+    background:conic-gradient(var(--score-color, var(--clay)) calc(var(--pct,0) * 3.6deg), var(--line) 0deg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 auto 6px;
+    transition:background .3s ease;
+  }
+  .ssb-ring::before{
+    content:'';
+    position:absolute;
+    inset:6px;
+    border-radius:50%;
+    background:var(--panel);
+  }
+  .ssb-value{
+    position:relative;
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:19px;
+    color:var(--text);
+  }
+  .ssb-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10px;
+    letter-spacing:.1em;
+    color:var(--text-dim);
+    text-transform:uppercase;
+  }
+  .ssb-sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size:9.5px;
+    color:var(--text-faint);
+    margin-top:2px;
+    white-space:nowrap;
+  }
+  main{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 32px 80px;
+  }
+  /* ---------- upload zone ---------- */
+  .upload-zone{
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius);
+    padding:36px;
+    text-align:center;
+    background:var(--panel);
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .upload-zone:hover, .upload-zone.drag{
+    border-color:var(--clay);
+    background:var(--panel-2);
+  }
+  .upload-zone h3{
+    font-family:'Oswald', sans-serif;
+    font-weight:500;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin:0 0 6px;
+    font-size:18px;
+  }
+  .upload-zone p{color:var(--text-dim); font-size:13px; margin:0;}
+  input[type=file]{display:none;}
+  .setup-row{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .setup-row .label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .seg{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .seg button{
+    background:var(--panel);
+    color:var(--text-dim);
+    border:none;
+    padding:8px 16px;
+    font-family:'Inter';
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .seg button + button{border-left:1px solid var(--line);}
+  .seg button.active{background:var(--clay); color:#fff;}
+  .btn{
+    background:var(--clay);
+    color:#fff;
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+    font-family:'Inter';
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    letter-spacing:.02em;
+    transition:filter .15s, opacity .15s;
+  }
+  .btn:hover{filter:brightness(1.1);}
+  .btn:disabled{opacity:.35; cursor:not-allowed;}
+  .btn.ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+  }
+  .btn.ghost:hover{border-color:var(--text-dim); color:var(--text);}
+  /* ---------- workspace ---------- */
+  #workspace{display:none;}
+  .video-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .video-stage{
+    position:relative;
+    background:#000;
+    display:flex;
+    justify-content:center;
+  }
+  .video-stage video, .video-stage canvas{
+    max-width:100%;
+    max-height:62vh;
+    display:block;
+  }
+  .video-stage canvas{position:absolute; top:0; left:0; pointer-events:auto; touch-action:none;}
+  .transport-row{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 18px;
+    border-top:1px solid var(--line);
+  }
+  .transport-row button{
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    width:34px; height:34px;
+    border-radius:7px;
+    cursor:pointer;
+    font-size:13px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .transport-row button:hover{border-color:var(--clay);}
+  .time-readout{
+    font-family:'JetBrains Mono'; font-size:12px; color:var(--text-dim); min-width:72px;
+  }
+  .btn.ghost.view-btn.active{
+    background:var(--clay); color:#fff; border-color:var(--clay);
+  }
+  .scrub-wrap{
+    position:relative;
+    padding:0 18px 18px;
+  }
+  .scrub-track{
+    position:relative;
+    height:34px;
+    background:var(--panel-2);
+    border-radius:6px;
+    border:1px solid var(--line);
+    cursor:pointer;
+  }
+  .scrub-fill{
+    position:absolute; left:0; top:0; bottom:0;
+    background:linear-gradient(90deg, var(--clay-dim), var(--clay));
+    border-radius:6px 0 0 6px;
+    pointer-events:none;
+    opacity:.5;
+  }
+  .pin{
+    position:absolute;
+    top:-8px;
+    width:14px; height:48px;
+    transform:translateX(-50%);
+    cursor:ew-resize;
+    z-index:5;
+  }
+  .pin::before{
+    content:'';
+    position:absolute;
+    left:50%; top:8px; bottom:0;
+    width:2px;
+    transform:translateX(-50%);
+    background:var(--pin-color, var(--blue));
+  }
+  .pin::after{
+    content:attr(data-label);
+    position:absolute;
+    top:-8px; left:50%;
+    transform:translateX(-50%);
+    background:var(--pin-color, var(--blue));
+    color:#0B0D10;
+    font-family:'JetBrains Mono';
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.04em;
+    padding:2px 5px;
+    border-radius:3px;
+    white-space:nowrap;
+  }
+  .pin-dot{
+    position:absolute; left:50%; top:6px;
+    width:9px; height:9px; border-radius:50%;
+    transform:translate(-50%,-50%);
+    background:var(--pin-color, var(--blue));
+    border:2px solid #0B0D10;
+  }
+  .legend{
+    display:flex; gap:16px; flex-wrap:wrap;
+    padding:0 18px 16px;
+    font-family:'JetBrains Mono'; font-size:10.5px; color:var(--text-dim);
+  }
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:8px;height:8px;border-radius:50%; display:inline-block;}
+  .hint{
+    padding:0 18px 16px;
+    font-size:12px;
+    color:var(--text-faint);
+    line-height:1.5;
+  }
+  /* ---------- progress ---------- */
+  .progress-wrap{
+    margin-top:18px;
+    display:none;
+  }
+  .progress-label{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim);
+    margin-bottom:8px; letter-spacing:.05em;
+  }
+  .progress-bar{
+    height:6px; background:var(--panel-2); border-radius:4px; overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .progress-fill{
+    height:100%; width:0%;
+    background:var(--clay);
+    transition:width .15s linear;
+  }
+  .progress-fill.error{ background:var(--stitch); width:100% !important; }
+  .progress-label.error{ color:var(--stitch); }
+  .progress-label.spin::before{
+    content:'';
+    display:inline-block;
+    width:9px; height:9px;
+    margin-right:8px;
+    border-radius:50%;
+    border:1.5px solid var(--clay-dim);
+    border-top-color:var(--clay);
+    animation:spin .7s linear infinite;
+    vertical-align:middle;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .retry-btn{display:none; margin-top:10px;}
+  /* ---------- dashboard ---------- */
+  #dashboard{display:none; margin-top:36px;}
+  .section-head{
+    display:flex; align-items:baseline; gap:10px;
+    margin:0 0 14px;
+  }
+  .section-head .num{
+    font-family:'Oswald'; font-weight:600; color:var(--clay); font-size:13px;
+  }
+  .section-head h2{
+    font-family:'Oswald'; font-weight:500; text-transform:uppercase; letter-spacing:.03em;
+    font-size:16px; margin:0; color:var(--text);
+  }
+  .section-head .note{
+    color:var(--text-faint); font-size:11.5px; margin-left:auto; font-family:'JetBrains Mono';
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));
+    gap:12px;
+    margin-bottom:34px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 18px;
+  }
+  .card .label{
+    font-family:'JetBrains Mono'; font-size:10.5px; letter-spacing:.06em;
+    color:var(--text-dim); text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .card .value{
+    font-family:'JetBrains Mono'; font-weight:700;
+    font-size:30px; color:var(--text);
+    line-height:1;
+  }
+  .card .value .unit{
+    font-size:14px; font-weight:500; color:var(--text-dim); margin-left:4px;
+  }
+  .card .sub{
+    margin-top:8px; font-size:11.5px; color:var(--text-faint); line-height:1.4;
+  }
+  .card.split{
+    display:flex; gap:18px;
+  }
+  .card.split .col{flex:1;}
+  .card.split .col .value{font-size:22px;}
+  .card.flag-good{border-color:#3a5944;}
+  .card.flag-warn{border-color:var(--stitch);}
+  .chart-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px 20px 12px;
+    margin-bottom:34px;
+  }
+  .chart-card .label{
+    font-family:'JetBrains Mono'; font-size:10.5px; letter-spacing:.06em;
+    color:var(--text-dim); text-transform:uppercase; margin-bottom:10px;
+  }
+  .tabbar{
+    max-width:1180px; margin:0 auto; padding:18px 32px 0;
+  }
+  .baseline-row{
+    display:flex; align-items:center; gap:14px;
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .baseline-row:last-child{border-bottom:none;}
+  .baseline-row .name{
+    font-family:'Inter'; font-weight:600; font-size:13.5px; color:var(--text);
+  }
+  .baseline-row .date{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--text-faint);
+  }
+  .baseline-row .stats{
+    display:flex; gap:16px; margin-left:auto;
+    font-family:'JetBrains Mono'; font-size:11.5px; color:var(--text-dim);
+  }
+  .baseline-row .remove-btn{
+    background:transparent; border:1px solid var(--line); color:var(--text-faint);
+    width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .baseline-row .remove-btn:hover{ border-color:var(--stitch); color:var(--stitch); }
+  .add-baseline-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 18px; margin:26px 0 8px;
+  }
+  .add-baseline-bar input[type=text]{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:7px; padding:9px 12px; font-family:'Inter'; font-size:13px;
+    flex:1; min-width:160px;
+  }
+  .add-baseline-bar input[type=text]:focus{ outline:none; border-color:var(--clay); }
+  .confirm{
+    font-family:'JetBrains Mono'; font-size:11.5px; color:var(--grass);
+    opacity:0; transition:opacity .2s;
+  }
+  .confirm.show{ opacity:1; }
+  .manual-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));
+    gap:14px;
+  }
+  .manual-grid label{
+    display:flex; flex-direction:column; gap:6px;
+    font-family:'JetBrains Mono'; font-size:10.5px; letter-spacing:.04em;
+    color:var(--text-dim); text-transform:uppercase;
+  }
+  .manual-grid input, .manual-grid select{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:7px; padding:9px 10px; font-family:'Inter'; font-size:13px;
+    text-transform:none; letter-spacing:normal;
+  }
+  .manual-grid input:focus, .manual-grid select:focus{ outline:none; border-color:var(--clay); }
+  .focus-card{
+    background:var(--panel); border:1px solid var(--stitch); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:16px;
+  }
+  .focus-card .focus-head{
+    display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:4px;
+  }
+  .focus-card .focus-head h3{
+    font-family:'Oswald'; font-weight:500; text-transform:uppercase; letter-spacing:.02em;
+    font-size:15px; margin:0; color:var(--text);
+  }
+  .focus-card .focus-stat{
+    font-family:'JetBrains Mono'; font-size:11.5px; color:var(--text-dim); margin-left:auto;
+  }
+  .focus-card .focus-note{ font-size:12px; color:var(--text-faint); margin-bottom:14px; }
+  .drill-item{
+    padding:12px 0; border-top:1px solid var(--line);
+  }
+  .drill-item:first-child{ border-top:none; }
+  .drill-item .drill-name{
+    font-family:'Inter'; font-weight:600; font-size:13.5px; color:var(--text);
+  }
+  .drill-item .drill-desc{
+    font-size:12.5px; color:var(--text-dim); margin-top:4px; line-height:1.5;
+  }
+  .on-target-row{
+    display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);
+    font-family:'JetBrains Mono'; font-size:12px; color:var(--text-dim);
+  }
+  .on-target-row:last-child{ border-bottom:none; }
+  .on-target-row i{ width:7px;height:7px;border-radius:50%; background:var(--grass); display:inline-block; flex-shrink:0; }
+  .client-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 20px; margin-bottom:14px;
+  }
+  .client-card .client-head{
+    display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+  }
+  .client-card .client-head h3{
+    font-family:'Oswald'; font-weight:500; text-transform:uppercase; letter-spacing:.02em;
+    font-size:16px; margin:0; color:var(--text);
+  }
+  .client-card .client-count{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim);
+  }
+  .client-card .client-toggle{
+    margin-left:auto; color:var(--text-faint); font-family:'JetBrains Mono'; font-size:11px;
+  }
+  .client-card .client-remove{
+    background:transparent; border:1px solid var(--line); color:var(--text-faint);
+    border-radius:6px; padding:5px 10px; font-size:11px; cursor:pointer; font-family:'JetBrains Mono';
+  }
+  .client-card .client-remove:hover{ border-color:var(--stitch); color:var(--stitch); }
+  .client-swings{ margin-top:14px; display:none; }
+  .client-swings.open{ display:block; }
+  .client-swing-row{
+    padding:11px 0; border-top:1px solid var(--line);
+  }
+  .client-swing-row:first-child{ border-top:none; }
+  .client-swing-row .csr-top{
+    display:flex; align-items:center; gap:10px;
+  }
+  .client-swing-row .csr-date{
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--text-faint);
+  }
+  .client-swing-row .csr-stats{
+    display:flex; gap:12px; flex-wrap:wrap; margin-top:5px;
+    font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim);
+  }
+  /* ---------- assessments tab ---------- */
+  .assess-controls{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 18px; margin-bottom:22px;
+  }
+  .assess-controls select, .assess-controls input[type=text]{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    border-radius:7px; padding:9px 12px; font-family:'Inter'; font-size:13px;
+  }
+  .assess-controls select:focus, .assess-controls input[type=text]:focus{ outline:none; border-color:var(--clay); }
+  .assess-controls .grow{ flex:1; min-width:150px; }
+  /* branded report — self-contained inline styles duplicated in JS for clipboard */
+  .report-shell{
+    background:#0B0D10; border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; margin-bottom:20px;
+  }
+  #reportEmpty{ }
+  footer{
+    max-width:1180px; margin:0 auto; padding:0 32px 60px;
+    color:var(--text-faint); font-size:11.5px; line-height:1.6;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <div class="header-title">
+      <div class="eyebrow">WRK-APP MODULE</div>
+      <h1>Swing Lab</h1>
+      <div class="sub">Upload a slow-motion swing video. Pose tracking finds the body, estimates load / foot plant / contact / extension, and measures rotation, separation, and posture from the 2D footage. Keep camera angle and distance consistent across every swing you log — that's what makes the numbers comparable.</div>
+    </div>
+    <div class="swing-score-badge" id="swingScoreBadge" style="display:none;" title="Click for the full comparison">
+      <div class="ssb-ring" id="ssbRing"><span class="ssb-value" id="ssbValue">--</span></div>
+      <div class="ssb-label">Swing Score</div>
+      <div class="ssb-sub" id="ssbSub">vs baseline</div>
+    </div>
+  </div>
+</header>
+<div class="tabbar">
+  <div class="seg" id="mainTabs">
+    <button data-tab="analyze" class="active">Analyze</button>
+    <button data-tab="baseline">Baseline</button>
+    <button data-tab="clients">Clients</button>
+    <button data-tab="drills">Drills</button>
+    <button data-tab="assessments">Assessments</button>
+  </div>
+</div>
+<main>
+<div id="analyzeTab">
+  <div id="uploadStage">
+    <div class="upload-zone" id="dropZone">
+      <h3>Drop a swing video, or click to browse</h3>
+      <p>MP4 / MOV — slow-motion, side or face-on view, full body in frame</p>
+      <input type="file" id="fileInput" accept="video/*,.mp4,.mov,.m4v,.qt,video/quicktime,video/mp4" />
+    </div>
+    <div class="setup-row">
+      <span class="label">Front (stride) foot is on screen side:</span>
+      <div class="seg" id="sideSeg">
+        <button data-side="left" class="active">Left</button>
+        <button data-side="right">Right</button>
+      </div>
+    </div>
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label" id="progressLabel">Loading pose model…</div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <button class="btn ghost retry-btn" id="retryBtn">Try a different video</button>
+    </div>
+  </div>
+  <div id="workspace">
+    <div class="video-panel">
+      <div class="video-stage" id="stage">
+        <video id="video" muted playsinline webkit-playsinline="true"></video>
+        <canvas id="overlay"></canvas>
+      </div>
+      <div class="transport-row">
+        <button id="playBtn">▶</button>
+        <button id="stepBack">◁</button>
+        <button id="stepFwd">▷</button>
+        <span class="time-readout" id="timeReadout">0.000s</span>
+        <span style="flex:1"></span>
+        <button class="btn ghost" id="reanalyzeBtn" style="width:auto;height:auto;padding:8px 14px;">New video</button>
+      </div>
+      <div class="transport-row">
+        <span class="label" style="margin-right:2px;">View</span>
+        <button class="btn ghost view-btn active" id="viewVideoBtn" data-view="video" style="width:auto;height:auto;padding:8px 14px;">Video</button>
+        <button class="btn ghost view-btn" id="viewSkeletonBtn" data-view="skeleton" style="width:auto;height:auto;padding:8px 14px;">Skeleton</button>
+        <button class="btn ghost" id="batTrackBtn" style="width:auto;height:auto;padding:8px 14px;">Track Bat: Off</button>
+      </div>
+      <div class="scrub-wrap">
+        <div class="scrub-track" id="scrubTrack">
+          <div class="scrub-fill" id="scrubFill"></div>
+          <div class="pin" id="pinLoad" data-label="LOAD" style="--pin-color:#3FA7FF;"><div class="pin-dot"></div></div>
+          <div class="pin" id="pinFP" data-label="PLANT" style="--pin-color:#5C8A6E;"><div class="pin-dot"></div></div>
+          <div class="pin" id="pinContact" data-label="CONTACT" style="--pin-color:#C1602E;"><div class="pin-dot"></div></div>
+          <div class="pin" id="pinExt" data-label="EXT" style="--pin-color:#A23B3B;"><div class="pin-dot"></div></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i style="background:#3FA7FF"></i>Load</span>
+        <span><i style="background:#5C8A6E"></i>Foot plant</span>
+        <span><i style="background:#C1602E"></i>Contact</span>
+        <span><i style="background:#A23B3B"></i>Extension</span>
+      </div>
+      <div class="legend" id="jointLegend">
+        <span><i style="background:#3FA7FF"></i>Head</span>
+        <span><i style="background:#9B6BD9"></i>Shoulders</span>
+        <span><i style="background:#E08A3C"></i>Elbows</span>
+        <span><i style="background:#E24C4C"></i>Hands</span>
+        <span><i style="background:#4A4A52"></i>Hips</span>
+        <span><i style="background:#E8D24C"></i>Knees</span>
+        <span><i style="background:#4CAF7D"></i>Feet</span>
+      </div>
+      <div class="transport-row" style="border-top:none; padding-top:0;">
+        <span class="label" style="margin-right:2px;">Jump to</span>
+        <button class="btn ghost" data-jump="load" style="width:auto;height:auto;padding:6px 12px;font-size:12px;">Load</button>
+        <button class="btn ghost" data-jump="fp" style="width:auto;height:auto;padding:6px 12px;font-size:12px;">Plant</button>
+        <button class="btn ghost" data-jump="contact" style="width:auto;height:auto;padding:6px 12px;font-size:12px;">Contact</button>
+        <button class="btn ghost" data-jump="ext" style="width:auto;height:auto;padding:6px 12px;font-size:12px;">Ext</button>
+      </div>
+      <div class="hint" id="editHint">Key frames are auto-detected — drag any marker on the timeline to correct it. <strong>Pause the video</strong> and drag any joint dot to fix a mis-tracked point — metrics recalculate automatically. For bat tracking: turn on Track Bat, use "Jump to → Contact" to land exactly on the contact frame, then drag the two gold dots — <strong>Knob</strong> onto the handle end (where the hands grip) and <strong>Tip</strong> onto the far end of the barrel. That's what powers Attack Angle and true Point of Contact.</div>
+    </div>
+  </div>
+  <div id="dashboard"></div>
+</div>
+<div id="baselineTab" style="display:none;">
+  <div class="section-head" style="margin-top:8px;"><span class="num">B</span><h2>MLB Baseline</h2><span class="note" id="baselineCount">0 swings logged</span></div>
+  <div class="sub" style="margin:-8px 0 20px; max-width:680px;">Analyze a swing in the Analyze tab, then add it here. Every number below is a running average across everything you've logged — build this out with your 10 MLB clips first, then compare high schoolers against it.</div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+    <button class="btn ghost" id="manualEntryToggle" style="width:auto;height:auto;padding:9px 16px;">Manually Input Baseline Metrics</button>
+    <button class="btn ghost" id="exportBaselineBtn" style="width:auto;height:auto;padding:9px 16px;">Export Backup (Baseline + Clients)</button>
+    <button class="btn ghost" id="importBaselineBtn" style="width:auto;height:auto;padding:9px 16px;">Import Backup</button>
+    <input type="file" id="importBaselineFile" accept=".json,application/json" style="display:none;">
+    <span class="confirm" id="exportBaselineConfirm">Downloaded ✓</span>
+    <span class="confirm" id="importBaselineConfirm">Imported ✓</span>
+  </div>
+  <div id="manualEntryForm" class="chart-card" style="display:none; margin-bottom:26px;">
+    <div class="label">Manual Entry</div>
+    <div class="sub" style="margin-bottom:16px;">Got numbers from a Driveline report or somewhere else? Add them straight into the baseline average. Leave anything you don't have blank — it just won't count toward that particular average.</div>
+    <div class="manual-grid">
+      <label>Label<input type="text" id="mLabel" placeholder="e.g. player name"></label>
+      <label>Separation @ Foot Plant (°)<input type="number" step="any" id="mSep"></label>
+      <label>Stride Length (% ht)<input type="number" step="any" id="mStride"></label>
+      <label>Center of Mass Travel (% ht)<input type="number" step="any" id="mCom"></label>
+      <label>Point of Contact (% ht)<input type="number" step="any" id="mPoc"></label>
+      <label>Point of Contact direction
+        <select id="mPocDir"><option value="1">Out front</option><option value="-1">Deep</option></select>
+      </label>
+      <label>Spine Tilt @ Contact (°)<input type="number" step="any" id="mSpine"></label>
+      <label>Front Knee @ Contact (°)<input type="number" step="any" id="mKnee"></label>
+      <label>Head Drift (% ht)<input type="number" step="any" id="mHead"></label>
+      <label>Sequenced correctly?
+        <select id="mSeq"><option value="unknown">Not sure</option><option value="yes">Yes</option><option value="no">No</option></select>
+      </label>
+    </div>
+    <div style="display:flex; gap:10px; align-items:center; margin-top:16px;">
+      <button class="btn" id="manualEntrySubmit">Add to Baseline</button>
+      <button class="btn ghost" id="manualEntryCancel">Cancel</button>
+      <span class="confirm" id="manualEntryConfirm">Added ✓</span>
+    </div>
+  </div>
+  <div id="baselineEmpty" class="upload-zone" style="cursor:default;">
+    <h3>No swings logged yet</h3>
+    <p>Analyze a swing, then hit "Add to Baseline" at the top of its results — or add numbers manually above.</p>
+  </div>
+  <div id="baselineContent" style="display:none;">
+    <div class="grid" id="baselineAvgGrid"></div>
+    <div class="section-head"><span class="num">·</span><h2>Logged Swings</h2><span class="note" id="baselineListNote"></span></div>
+    <div class="chart-card">
+      <div id="baselineList"></div>
+    </div>
+  </div>
+</div>
+<div id="clientsTab" style="display:none;">
+  <div class="section-head" style="margin-top:8px;"><span class="num">C</span><h2>Client Swings</h2><span class="note" id="clientsCount">0 swings logged</span></div>
+  <div class="sub" style="margin:-8px 0 20px; max-width:680px;">Every swing here is kept individually per client — nothing gets averaged. Analyze a swing in the Analyze tab, then use "Save to Client Swings" and give it a client's name.</div>
+  <div id="clientsEmpty" class="upload-zone" style="cursor:default;">
+    <h3>No client swings saved yet</h3>
+    <p>Analyze a swing, then use "Save to Client Swings" at the top of its results.</p>
+  </div>
+  <div id="clientsContent" style="display:none;">
+    <input type="text" id="clientSearchInput" placeholder="Search clients…" class="manual-grid" style="display:block; width:100%; max-width:360px; margin-bottom:22px; background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:7px; padding:10px 12px; font-family:'Inter'; font-size:13px;">
+    <div id="clientsList"></div>
+  </div>
+</div>
+<div id="drillsTab" style="display:none;">
+  <div class="section-head" style="margin-top:8px;"><span class="num">D</span><h2>Drill Routine</h2><span class="note" id="drillsSubtitle"></span></div>
+  <div class="sub" style="margin:-8px 0 20px; max-width:680px;">Built from the last swing you analyzed, ranked against your baseline — biggest gaps first.</div>
+  <div id="drillsEmpty" class="upload-zone" style="cursor:default;">
+    <h3 id="drillsEmptyTitle">Analyze a swing first</h3>
+    <p id="drillsEmptyText">Head to the Analyze tab, run a swing through it, then come back here for a routine built off that swing vs. your baseline.</p>
+  </div>
+  <div id="drillsContent" style="display:none;">
+    <div id="drillsFocusList"></div>
+    <div style="display:flex; gap:10px; align-items:center; margin:22px 0 8px;">
+      <button class="btn ghost" id="copyRoutineBtn" style="width:auto;height:auto;padding:9px 16px;">Copy Routine as Text</button>
+      <span class="confirm" id="copyRoutineConfirm">Copied ✓</span>
+    </div>
+    <div class="section-head"><span class="num">·</span><h2>On Target</h2><span class="note">no drills needed here right now</span></div>
+    <div class="chart-card">
+      <div id="drillsOnTarget"></div>
+    </div>
+  </div>
+</div>
+<div id="assessmentsTab" style="display:none;">
+  <div class="section-head" style="margin-top:8px;"><span class="num">A</span><h2>Assessment Report</h2><span class="note" id="assessSubtitle"></span></div>
+  <div class="sub" style="margin:-8px 0 20px; max-width:680px;">Build a clean, branded one-page report of a hitter's numbers against your baseline. Pick a source, add a note if you want, then copy it straight into an email or as plain text — no retyping.</div>
+
+  <div class="assess-controls">
+    <select id="assessSource"></select>
+    <input type="text" id="assessPlayerName" class="grow" placeholder="Player name for the report (optional)">
+    <input type="text" id="assessOrg" placeholder="Your name / org (optional)">
+  </div>
+  <div class="assess-controls" style="margin-top:-10px;">
+    <input type="text" id="assessNote" class="grow" placeholder="Coach's note — one line that shows at the top of the report (optional)">
+    <button class="btn" id="assessRefresh">Build Report</button>
+  </div>
+
+  <div id="assessEmpty" class="upload-zone" style="cursor:default;">
+    <h3 id="assessEmptyTitle">Nothing to assess yet</h3>
+    <p id="assessEmptyText">Analyze a swing, or save some client swings, then pick a source above. You'll also want at least a couple of baseline swings logged so there's something to compare against.</p>
+  </div>
+
+  <div id="assessContent" style="display:none;">
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+      <button class="btn" id="copyReportHtmlBtn">Copy for Email</button>
+      <button class="btn ghost" id="copyReportTextBtn" style="width:auto;height:auto;padding:9px 16px;">Copy as Text</button>
+      <button class="btn ghost" id="printReportBtn" style="width:auto;height:auto;padding:9px 16px;">Print / Save PDF</button>
+      <span class="confirm" id="copyReportConfirm">Copied — paste into your email ✓</span>
+    </div>
+    <div class="report-shell">
+      <div id="reportRender"></div>
+    </div>
+    <div class="sub" style="max-width:680px;">"Copy for Email" puts a fully formatted version on your clipboard — paste it right into Gmail, Outlook, or Apple Mail and the styling comes with it. "Copy as Text" is the plain-text fallback for places that strip formatting.</div>
+  </div>
+</div>
+</main>
+<footer id="footerNote" style="display:none;">
+  All measurements are estimated from 2D video and normalized to the player's on-screen body length, since true scale and depth aren't recoverable from a single camera. Treat these as comparative numbers for swings filmed at a consistent angle and distance — not lab-grade biomechanics data.
+</footer>
+<script type="module">
+import { PoseLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+// ---------- DOM ----------
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const sideSeg = document.getElementById('sideSeg');
+const progressWrap = document.getElementById('progressWrap');
+const progressLabel = document.getElementById('progressLabel');
+const progressFill = document.getElementById('progressFill');
+const retryBtn = document.getElementById('retryBtn');
+const uploadStage = document.getElementById('uploadStage');
+const workspace = document.getElementById('workspace');
+const dashboard = document.getElementById('dashboard');
+const footerNote = document.getElementById('footerNote');
+const video = document.getElementById('video');
+const overlay = document.getElementById('overlay');
+const ctx = overlay.getContext('2d');
+const detectCanvas = document.createElement('canvas');
+const detectCtx = detectCanvas.getContext('2d', {willReadFrequently:true});
+const playBtn = document.getElementById('playBtn');
+const stepBack = document.getElementById('stepBack');
+const stepFwd = document.getElementById('stepFwd');
+const timeReadout = document.getElementById('timeReadout');
+const scrubTrack = document.getElementById('scrubTrack');
+const scrubFill = document.getElementById('scrubFill');
+const reanalyzeBtn = document.getElementById('reanalyzeBtn');
+const pins = {
+  load: document.getElementById('pinLoad'),
+  fp: document.getElementById('pinFP'),
+  contact: document.getElementById('pinContact'),
+  ext: document.getElementById('pinExt'),
+};
+let frontSide = 'left';
+window.addEventListener('error', e=>{
+  console.error('Swing Lab error:', e.error || e.message);
+  if(progressWrap.style.display !== 'none' && uploadStage.style.display !== 'none'){
+    setStatus('Something went wrong. Please try again, or try a different video.', 0, {error:true});
+  }
+});
+window.addEventListener('unhandledrejection', e=>{
+  console.error('Swing Lab unhandled rejection:', e.reason);
+  if(progressWrap.style.display !== 'none' && uploadStage.style.display !== 'none'){
+    setStatus('Something went wrong. Please try again, or try a different video.', 0, {error:true});
+  }
+});
+sideSeg.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    sideSeg.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    frontSide = b.dataset.side;
+  });
+});
+// ---------- state ----------
+let frames = [];          // [{t, lm:[{x,y}]}]  (lm in pixel space, video.videoWidth/Height)
+let videoW=0, videoH=0;
+let keyIdx = { load:0, fp:0, contact:0, ext:0 }; // indices into frames[]
+let landmarker = null;
+let frontIdx = {ankle:27, knee:25, hip:23, elbow:13, wrist:15, heel:29, foot:31};
+let backIdx  = {ankle:28, knee:26, hip:24, elbow:14, wrist:16, heel:30, foot:32};
+const CONNECTIONS = [
+  [11,12],[11,13],[13,15],[12,14],[14,16],
+  [11,23],[12,24],[23,24],
+  [23,25],[25,27],[24,26],[26,28],
+  [27,29],[27,31],[29,31],
+  [28,30],[28,32],[30,32],
+  [0,11],[0,12]
+];
+// ---------- upload handling ----------
+['dragover','dragleave','drop'].forEach(evt=>{
+  dropZone.addEventListener(evt, e=>{
+    e.preventDefault();
+    if(evt==='dragover') dropZone.classList.add('drag');
+    if(evt==='dragleave') dropZone.classList.remove('drag');
+    if(evt==='drop'){
+      dropZone.classList.remove('drag');
+      const f = e.dataTransfer.files[0];
+      if(f) handleFile(f);
+    }
+  });
+});
+dropZone.addEventListener('click', ()=>fileInput.click());
+fileInput.addEventListener('change', e=>{
+  if(e.target.files[0]) handleFile(e.target.files[0]);
+});
+function setStatus(text, pct, opts={}){
+  progressWrap.style.display = 'block';
+  progressLabel.textContent = text;
+  progressLabel.classList.toggle('error', !!opts.error);
+  progressLabel.classList.toggle('spin', !opts.error && opts.spin !== false);
+  progressFill.classList.toggle('error', !!opts.error);
+  if(!opts.error) progressFill.style.width = `${pct}%`;
+  retryBtn.style.display = opts.error ? 'inline-block' : 'none';
+}
+function withTimeout(promise, ms, message){
+  return Promise.race([
+    promise,
+    new Promise((_, reject)=> setTimeout(()=>reject(new Error(message)), ms))
+  ]);
+}
+retryBtn.addEventListener('click', ()=>{
+  progressWrap.style.display = 'none';
+  fileInput.value = '';
+});
+async function handleFile(file){
+  setStatus(`Reading "${file.name}"…`, 5);
+  if(!file.type.startsWith('video/') && !/\.(mp4|mov|m4v|qt)$/i.test(file.name)){
+    setStatus(`"${file.name}" doesn't look like a video file. Try an mp4 or mov.`, 0, {error:true});
+    return;
+  }
+  try{
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    setStatus('Loading video…', 10);
+    await withTimeout(new Promise((res, rej)=>{
+      video.onloadedmetadata = res;
+      video.onerror = ()=> rej(new Error('format'));
+    }), 15000, 'timeout');
+    videoW = video.videoWidth; videoH = video.videoHeight;
+    if(!videoW || !videoH) throw new Error('format');
+    setStatus('Loading high-precision pose model… (first time only, needs internet)', 18);
+    if(!landmarker){
+      const vision = await withTimeout(
+        FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"),
+        30000, 'model-load-timeout'
+      );
+      try{
+        landmarker = await withTimeout(PoseLandmarker.createFromOptions(vision, {
+          baseOptions:{
+            modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
+            delegate:"GPU"
+          },
+          runningMode:"VIDEO",
+          numPoses:1,
+          minPoseDetectionConfidence:0.5,
+          minPosePresenceConfidence:0.5,
+          minTrackingConfidence:0.5
+        }), 30000, 'model-load-timeout');
+      }catch(e){
+        setStatus('Retrying with a more compatible mode…', 18);
+        landmarker = await withTimeout(PoseLandmarker.createFromOptions(vision, {
+          baseOptions:{
+            modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
+            delegate:"CPU"
+          },
+          runningMode:"VIDEO",
+          numPoses:1,
+          minPoseDetectionConfidence:0.5,
+          minPosePresenceConfidence:0.5,
+          minTrackingConfidence:0.5
+        }), 35000, 'model-load-timeout');
+      }
+    }
+    await analyzeVideo();
+  }catch(err){
+    console.error('Swing Lab upload error:', err);
+    let msg = 'Something went wrong analyzing that video. Please try again.';
+    if(err.message === 'format'){
+      msg = `Couldn't play "${file.name}" in this browser. Try a standard .mp4, or if it's an iPhone .mov, open this page in Safari on the iPhone itself.`;
+    } else if(err.message === 'model-load-timeout'){
+      msg = 'The pose-tracking model is taking too long to load — check your internet connection and try again.';
+    } else if(err.message === 'timeout'){
+      msg = 'The video took too long to load — try a smaller clip or a standard .mp4.';
+    }
+    setStatus(msg, 0, {error:true});
+  }
+}
+async function analyzeVideo(){
+  frames = [];
+  const duration = video.duration;
+  const SAMPLE_COUNT = Math.min(220, Math.max(50, Math.round(duration*55)));
+  const step = duration / SAMPLE_COUNT;
+  const detectW = Math.min(900, videoW);
+  const detectH = Math.round(detectW * (videoH/videoW));
+  detectCanvas.width = detectW;
+  detectCanvas.height = detectH;
+  for(let i=0;i<SAMPLE_COUNT;i++){
+    const t = Math.min(duration - 0.001, i*step);
+    await withTimeout(seekTo(t), 4000, 'seek-timeout').catch(()=>{});
+    try{
+      detectCtx.drawImage(video, 0, 0, detectW, detectH);
+      const result = landmarker.detectForVideo(detectCanvas, performance.now());
+      if(result.landmarks && result.landmarks.length){
+        const lm = result.landmarks[0].map(p=>({x:p.x*videoW, y:p.y*videoH, v:p.visibility ?? 1}));
+        frames.push({t: video.currentTime, lm});
+      }
+    }catch(e){
+      console.warn('Frame tracking skipped a frame:', e);
+    }
+    setStatus(`Tracking frame ${i+1} / ${SAMPLE_COUNT}…`, 18 + (i/SAMPLE_COUNT)*74);
+  }
+  if(frames.length < 10){
+    setStatus('Couldn\'t find a clear, full-body pose in this clip. Try a clip with the whole body visible, good lighting, and the camera fairly steady.', 0, {error:true});
+    return;
+  }
+  setStatus('Stabilizing tracking…', 93);
+  smoothLandmarks(frames);
+  setStatus('Finalizing…', 98);
+  setupFrontBack();
+  autoDetectKeyframes();
+  setTimeout(()=>{
+    progressWrap.style.display='none';
+    uploadStage.style.display='none';
+    workspace.style.display='block';
+    footerNote.style.display='block';
+    initPlayback();
+    layoutPins();
+    computeAndRender();
+  }, 250);
+}
+function seekTo(t){
+  return new Promise(res=>{
+    const onSeeked = ()=>{ video.removeEventListener('seeked', onSeeked); res(); };
+    video.addEventListener('seeked', onSeeked);
+    video.currentTime = t;
+  });
+}
+function setupFrontBack(){
+  const lm = frames[0].lm;
+  const leftIsFrontScreen = lm[27].x < lm[28].x;
+  const userWantsLeftScreen = frontSide === 'left';
+  const anatomicalLeftIsFront = leftIsFrontScreen === userWantsLeftScreen;
+  if(anatomicalLeftIsFront){
+    frontIdx = {ankle:27, knee:25, hip:23, elbow:13, wrist:15, heel:29, foot:31};
+    backIdx  = {ankle:28, knee:26, hip:24, elbow:14, wrist:16, heel:30, foot:32};
+  } else {
+    frontIdx = {ankle:28, knee:26, hip:24, elbow:14, wrist:16, heel:30, foot:32};
+    backIdx  = {ankle:27, knee:25, hip:23, elbow:13, wrist:15, heel:29, foot:31};
+  }
+}
+// ---------- math helpers ----------
+const dist = (a,b)=>Math.hypot(a.x-b.x, a.y-b.y);
+const mid = (a,b)=>({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+function angleAt(b,a,c){
+  const v1={x:a.x-b.x,y:a.y-b.y}, v2={x:c.x-b.x,y:c.y-b.y};
+  const dot=v1.x*v2.x+v1.y*v2.y;
+  const m1=Math.hypot(v1.x,v1.y), m2=Math.hypot(v2.x,v2.y);
+  if(m1===0||m2===0) return 0;
+  let cos = dot/(m1*m2);
+  cos = Math.max(-1,Math.min(1,cos));
+  return Math.acos(cos)*180/Math.PI;
+}
+function lineAngleDeg(a,b){
+  return Math.atan2(b.y-a.y, b.x-a.x)*180/Math.PI;
+}
+function smooth(arr, win=5){
+  const out=[];
+  const h=Math.floor(win/2);
+  for(let i=0;i<arr.length;i++){
+    let s=0,n=0;
+    for(let j=Math.max(0,i-h); j<=Math.min(arr.length-1,i+h); j++){ s+=arr[j]; n++; }
+    out.push(s/n);
+  }
+  return out;
+}
+function median(arr){
+  const s = [...arr].sort((a,b)=>a-b);
+  const m = Math.floor(s.length/2);
+  return s.length%2 ? s[m] : (s[m-1]+s[m])/2;
+}
+function medianFilter(arr, win=5){
+  const out=[];
+  const h=Math.floor(win/2);
+  for(let i=0;i<arr.length;i++){
+    const seg=[];
+    for(let j=Math.max(0,i-h); j<=Math.min(arr.length-1,i+h); j++) seg.push(arr[j]);
+    out.push(median(seg));
+  }
+  return out;
+}
+function oneEuroAlpha(cutoff, dt){
+  const tau = 1/(2*Math.PI*cutoff);
+  return 1/(1+tau/dt);
+}
+function visibilityTrust(v, lo=0.2, hi=0.6){
+  if(v <= lo) return 0;
+  if(v >= hi) return 1;
+  return (v-lo)/(hi-lo);
+}
+function confidenceFilterPass(values, times, visArr, forward, minCutoff, beta, dCutoff){
+  const n = values.length;
+  const order = forward ? [...Array(n).keys()] : [...Array(n).keys()].reverse();
+  const out = new Array(n);
+  let xPrev = values[order[0]], dxPrev = 0, tPrev = times[order[0]];
+  out[order[0]] = xPrev;
+  order.forEach((idx,k)=>{
+    if(k===0) return;
+    const dt = Math.max(1/240, Math.abs(times[idx]-tPrev));
+    const trust = visibilityTrust(visArr[idx]);
+    const dx = (values[idx]-xPrev)/dt;
+    const aD = oneEuroAlpha(dCutoff, dt);
+    const dxHat = aD*dx + (1-aD)*dxPrev;
+    const cutoff = minCutoff + beta*Math.abs(dxHat);
+    const a = oneEuroAlpha(cutoff, dt) * trust;
+    const xHat = a*values[idx] + (1-a)*xPrev;
+    out[idx] = xHat;
+    xPrev = xHat;
+    dxPrev = trust > 0.05 ? dxHat : 0;
+    tPrev = times[idx];
+  });
+  return out;
+}
+function confidenceFilterZeroPhase(values, times, visArr, minCutoff=1.0, beta=0.012, dCutoff=1.0){
+  const fwd = confidenceFilterPass(values, times, visArr, true, minCutoff, beta, dCutoff);
+  const bwd = confidenceFilterPass(values, times, visArr, false, minCutoff, beta, dCutoff);
+  return values.map((_,i)=>(fwd[i]+bwd[i])/2);
+}
+function smoothLandmarks(frameList){
+  if(frameList.length < 5) return;
+  const times = frameList.map(f=>f.t);
+  const numPts = frameList[0].lm.length;
+  for(let idx=0; idx<numPts; idx++){
+    const xs = medianFilter(frameList.map(f=>f.lm[idx].x), 3);
+    const ys = medianFilter(frameList.map(f=>f.lm[idx].y), 3);
+    const vis = frameList.map(f=>{
+      const v = f.lm[idx].v;
+      return (typeof v === 'number') ? v : 1;
+    });
+    const sx = confidenceFilterZeroPhase(xs, times, vis);
+    const sy = confidenceFilterZeroPhase(ys, times, vis);
+    for(let i=0;i<frameList.length;i++){
+      frameList[i].lm[idx] = {x:sx[i], y:sy[i], v:vis[i]};
+    }
+  }
+}
+function unwrap(degArr){
+  const out=[degArr[0]];
+  for(let i=1;i<degArr.length;i++){
+    let d = degArr[i]-degArr[i-1];
+    while(d>180){ d-=360; }
+    while(d<-180){ d+=360; }
+    out.push(out[i-1]+d);
+  }
+  return out;
+}
+function derivative(values, times){
+  const out=[0];
+  for(let i=1;i<values.length;i++){
+    const dt = times[i]-times[i-1];
+    out.push(dt>0 ? (values[i]-values[i-1])/dt : 0);
+  }
+  return out;
+}
+// ---------- auto keyframe detection ----------
+function autoDetectKeyframes(){
+  const n = frames.length;
+  const times = frames.map(f=>f.t);
+  const frontAnkleX = smooth(frames.map(f=>f.lm[frontIdx.ankle].x));
+  const ankleVel = derivative(frontAnkleX, times).map(Math.abs);
+  const smoothVel = smooth(ankleVel, 5);
+  const wristSpeed = frames.map((f,i)=>{
+    if(i===0) return 0;
+    const prev = frames[i-1];
+    const dt = f.t - prev.t || 1/60;
+    const lw = dist(f.lm[15], prev.lm[15])/dt;
+    const rw = dist(f.lm[16], prev.lm[16])/dt;
+    return Math.max(lw,rw);
+  });
+  const smoothWrist = smooth(wristSpeed, 5);
+  let loadI = 0, minMotion = Infinity;
+  for(let i=2;i<Math.floor(n*0.55);i++){
+    const m = smoothVel[i] + smoothWrist[i]*0.15;
+    if(m < minMotion){ minMotion = m; loadI = i; }
+  }
+  const peakAnkleVel = Math.max(...smoothVel.slice(loadI));
+  const strideThresh = peakAnkleVel * 0.25;
+  let strideStartI = loadI;
+  for(let i=loadI;i<n;i++){
+    if(smoothVel[i] > strideThresh){ strideStartI = i; break; }
+  }
+  let fpI = Math.min(strideStartI+3, n-2);
+  for(let i=strideStartI+2;i<n-1;i++){
+    if(smoothVel[i] < smoothVel[i-1] && smoothVel[i] <= smoothVel[i+1]){
+      fpI = i; break;
+    }
+  }
+  const hipAngRaw2 = frames.map(f=>lineAngleDeg(f.lm[23], f.lm[24]));
+  const shAngRaw2  = frames.map(f=>lineAngleDeg(f.lm[11], f.lm[12]));
+  const hipAngU = unwrap(hipAngRaw2);
+  const shAngU  = unwrap(shAngRaw2);
+  const hipRot2 = hipAngU.map(a=>a-hipAngU[loadI]);
+  const shRot2  = shAngU.map(a=>a-shAngU[loadI]);
+  const sepSeries = shRot2.map((s,i)=>Math.abs(s-hipRot2[i]));
+  const comSeries = frames.map(f=>mid(f.lm[23], f.lm[24]));
+  const forwardSign2 = Math.sign(frames[loadI].lm[frontIdx.ankle].x - frames[loadI].lm[backIdx.ankle].x) || 1;
+  const wristForward = frames.map((f,i)=>(f.lm[frontIdx.wrist].x - comSeries[i].x) * forwardSign2);
+  let roughPeakI = fpI, roughPeakV = -1;
+  for(let i=fpI;i<n;i++){
+    if(smoothWrist[i] > roughPeakV){ roughPeakV = smoothWrist[i]; roughPeakI = i; }
+  }
+  const halfWin = Math.max(4, Math.round(n*0.09));
+  const plantBuffer = Math.max(1, Math.round((n-fpI)*0.1));
+  const contactSearchStart = Math.max(fpI + plantBuffer, roughPeakI - halfWin);
+  const contactSearchEnd = Math.min(n, roughPeakI + halfWin + 1);
+  const maxSep = Math.max(1, ...sepSeries.slice(contactSearchStart, contactSearchEnd));
+  const wristSlice = smoothWrist.slice(contactSearchStart, contactSearchEnd);
+  const maxWristInWindow = Math.max(1, ...wristSlice);
+  const fwdSlice = wristForward.slice(contactSearchStart, contactSearchEnd);
+  const fwdMin = Math.min(...fwdSlice), fwdMax = Math.max(...fwdSlice);
+  const fwdRange = Math.max(1, fwdMax - fwdMin);
+  let contactI = contactSearchStart;
+  let bestScore = -1;
+  for(let i=contactSearchStart;i<contactSearchEnd;i++){
+    const speedNorm = smoothWrist[i] / maxWristInWindow;
+    const sepNorm = sepSeries[i] / maxSep;
+    const fwdNorm = (wristForward[i]-fwdMin) / fwdRange;
+    const score = Math.pow(speedNorm, 1.4) * (0.5 + 0.5*(1-sepNorm)) * (0.65 + 0.35*fwdNorm);
+    if(score > bestScore){ bestScore = score; contactI = i; }
+  }
+  let extI = Math.min(contactI + Math.round(n*0.06), n-1);
+  let maxElbow = -1;
+  const searchEnd = Math.min(n, contactI + Math.round(n*0.18));
+  for(let i=contactI;i<searchEnd;i++){
+    const f = frames[i];
+    const shoulderIdx = frontIdx.elbow===13?11:12;
+    const ang = angleAt(f.lm[frontIdx.elbow], f.lm[shoulderIdx], f.lm[frontIdx.wrist]);
+    if(ang>maxElbow){ maxElbow=ang; extI=i; }
+  }
+  keyIdx = { load:loadI, fp:Math.max(fpI,loadI+1), contact:Math.max(contactI,fpI+1), ext:Math.max(extI,contactI) };
+}
+// ---------- pins / scrubbing ----------
+function layoutPins(){
+  const duration = video.duration;
+  Object.entries({load:pins.load, fp:pins.fp, contact:pins.contact, ext:pins.ext}).forEach(([k,el])=>{
+    const t = frames[keyIdx[k]].t;
+    el.style.left = `${(t/duration)*100}%`;
+  });
+  makeDraggable(pins.load, 'load');
+  makeDraggable(pins.fp, 'fp');
+  makeDraggable(pins.contact, 'contact');
+  makeDraggable(pins.ext, 'ext');
+}
+function nearestFrameIndex(t){
+  let best=0, bestD=Infinity;
+  for(let i=0;i<frames.length;i++){
+    const d = Math.abs(frames[i].t - t);
+    if(d<bestD){ bestD=d; best=i; }
+  }
+  return best;
+}
+function makeDraggable(el, key){
+  let dragging=false;
+  el.addEventListener('mousedown', e=>{ dragging=true; e.stopPropagation(); });
+  el.addEventListener('touchstart', e=>{ dragging=true; e.stopPropagation(); }, {passive:true});
+  window.addEventListener('mousemove', e=>{ if(dragging) updateFromClientX(e.clientX, key); });
+  window.addEventListener('touchmove', e=>{ if(dragging) updateFromClientX(e.touches[0].clientX, key); }, {passive:true});
+  window.addEventListener('mouseup', ()=>{ if(dragging){ dragging=false; computeAndRender(); }});
+  window.addEventListener('touchend', ()=>{ if(dragging){ dragging=false; computeAndRender(); }});
+}
+function updateFromClientX(clientX, key){
+  const rect = scrubTrack.getBoundingClientRect();
+  let frac = (clientX-rect.left)/rect.width;
+  frac = Math.max(0,Math.min(1,frac));
+  const t = frac*video.duration;
+  keyIdx[key] = nearestFrameIndex(t);
+  pins[key].style.left = `${frac*100}%`;
+}
+scrubTrack.addEventListener('click', e=>{
+  if(e.target.closest('.pin')) return;
+  const rect = scrubTrack.getBoundingClientRect();
+  const frac = (e.clientX-rect.left)/rect.width;
+  video.currentTime = frac*video.duration;
+});
+// ---------- playback + overlay ----------
+function initPlayback(){
+  function sizeCanvas(){
+    overlay.width = video.clientWidth;
+    overlay.height = video.clientHeight;
+    overlay.style.width = video.clientWidth + 'px';
+    overlay.style.height = video.clientHeight + 'px';
+    overlay.style.left = video.offsetLeft + 'px';
+    overlay.style.top = video.offsetTop + 'px';
+  }
+  video.addEventListener('loadedmetadata', sizeCanvas);
+  window.addEventListener('resize', sizeCanvas);
+  setTimeout(sizeCanvas, 50);
+  setTimeout(sizeCanvas, 300);
+  playBtn.addEventListener('click', ()=>{
+    if(video.paused){ video.play(); playBtn.textContent='❚❚'; }
+    else { video.pause(); playBtn.textContent='▶'; }
+  });
+  video.addEventListener('pause', ()=>{ playBtn.textContent='▶'; updateEditCursor(); });
+  video.addEventListener('play', updateEditCursor);
+  video.addEventListener('ended', ()=>playBtn.textContent='▶');
+  setTimeout(updateEditCursor, 50);
+  stepBack.addEventListener('click', ()=>{
+    const i = Math.max(0, nearestFrameIndex(video.currentTime)-1);
+    video.currentTime = frames[i].t;
+  });
+  stepFwd.addEventListener('click', ()=>{
+    const i = Math.min(frames.length-1, nearestFrameIndex(video.currentTime)+1);
+    video.currentTime = frames[i].t;
+  });
+  function loop(){
+    drawOverlayAtTime(video.currentTime);
+    const duration = video.duration;
+    scrubFill.style.width = `${(video.currentTime/duration)*100}%`;
+    timeReadout.textContent = `${video.currentTime.toFixed(3)}s`;
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}
+// ---------- editable overlay state ----------
+let skeletonMode = false;
+let batTrackingOn = false;
+let batMarks = {};
+let lastDrawnPoints = [];
+let draggingPoint = null;
+function getBatMarks(frameIndex){
+  if(!batMarks[frameIndex]){
+    const f = frames[frameIndex];
+    const wrist = f.lm[frontIdx.wrist];
+    const elbow = f.lm[frontIdx.elbow];
+    const dx = wrist.x-elbow.x, dy = wrist.y-elbow.y;
+    batMarks[frameIndex] = {
+      knob: {x:wrist.x, y:wrist.y},
+      tip: {x:wrist.x+dx*2.2, y:wrist.y+dy*2.2}
+    };
+  }
+  return batMarks[frameIndex];
+}
+const SIDE_LEFT = '#3FB39A';
+const SIDE_RIGHT = '#E2607A';
+const SIDE_CENTER = '#D9D5C8';
+function sideOf(idx){
+  if(idx === 0) return 'center';
+  return (idx % 2 === 1) ? 'left' : 'right';
+}
+function boneColor(a, b){
+  const sa = sideOf(a), sb = sideOf(b);
+  if(sa === 'left' || sb === 'left'){ if(sa!=='right' && sb!=='right') return SIDE_LEFT; }
+  if(sa === 'right' || sb === 'right'){ if(sa!=='left' && sb!=='left') return SIDE_RIGHT; }
+  return SIDE_CENTER;
+}
+const JOINT_COLORS = {
+  head:      {color:'#3FA7FF', label:'Head',     idx:[0]},
+  shoulders: {color:'#9B6BD9', label:'Shoulders', idx:[11,12]},
+  elbows:    {color:'#E08A3C', label:'Elbows',    idx:[13,14]},
+  hands:     {color:'#E24C4C', label:'Hands',     idx:[15,16]},
+  hips:      {color:'#4A4A52', label:'Hips',      idx:[23,24]},
+  knees:     {color:'#E8D24C', label:'Knees',     idx:[25,26]},
+  feet:      {color:'#4CAF7D', label:'Feet',      idx:[27,28,29,30,31,32]},
+};
+const JOINT_COLOR_BY_IDX = {};
+Object.values(JOINT_COLORS).forEach(g=>g.idx.forEach(i=>{ JOINT_COLOR_BY_IDX[i]=g.color; }));
+function drawOverlayAtTime(t){
+  ctx.clearRect(0,0,overlay.width, overlay.height);
+  lastDrawnPoints = [];
+  if(!frames.length) return;
+  const i = nearestFrameIndex(t);
+  const lm = frames[i].lm;
+  const sx = overlay.width / videoW;
+  const sy = overlay.height / videoH;
+  const P = (idx)=>({x:lm[idx].x*sx, y:lm[idx].y*sy});
+  if(skeletonMode){
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 3;
+    CONNECTIONS.forEach(([a,b])=>{
+      const pa=P(a), pb=P(b);
+      ctx.strokeStyle = boneColor(a,b);
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.stroke();
+    });
+    const ptIdx = [0,11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32];
+    ptIdx.forEach(idx=>{
+      const p = P(idx);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5, 0, Math.PI*2);
+      ctx.fillStyle = JOINT_COLOR_BY_IDX[idx] || '#D9D5C8';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(242,239,234,0.85)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    });
+  } else {
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(193,96,46,0.85)';
+    ctx.lineWidth = 2.5;
+    CONNECTIONS.forEach(([a,b])=>{
+      const pa=P(a), pb=P(b);
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.stroke();
+    });
+    const ptIdx = [0,11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32];
+    ptIdx.forEach(idx=>{
+      const p = P(idx);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 5.5, 0, Math.PI*2);
+      ctx.fillStyle = JOINT_COLOR_BY_IDX[idx] || '#3FA7FF';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(242,239,234,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    });
+  }
+  const ptIdx = [0,11,12,13,14,15,16,23,24,25,26,27,28,29,30,31,32];
+  ptIdx.forEach(idx=>{
+    const p = P(idx);
+    lastDrawnPoints.push({x:p.x, y:p.y, kind:'body', ref:idx, frameIndex:i});
+  });
+  if(batTrackingOn){
+    const marks = getBatMarks(i);
+    ctx.strokeStyle = 'rgba(212,175,55,0.9)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(marks.knob.x*sx, marks.knob.y*sy);
+    ctx.lineTo(marks.tip.x*sx, marks.tip.y*sy);
+    ctx.stroke();
+    [['knob',marks.knob,'#D4AF37'],['tip',marks.tip,'#F0D98C']].forEach(([ref,p,color])=>{
+      const px = p.x*sx, py = p.y*sy;
+      ctx.beginPath();
+      ctx.arc(px, py, 8, 0, Math.PI*2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#0B0D10';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      lastDrawnPoints.push({x:px, y:py, kind:'bat', ref, frameIndex:i});
+    });
+  }
+}
+function updateEditCursor(){
+  overlay.style.cursor = video.paused ? 'crosshair' : 'default';
+}
+overlay.addEventListener('pointerdown', e=>{
+  if(!video.paused || !lastDrawnPoints.length) return;
+  const rect = overlay.getBoundingClientRect();
+  const mx = (e.clientX-rect.left) * (overlay.width/rect.width);
+  const my = (e.clientY-rect.top) * (overlay.height/rect.height);
+  let closest=null, closestD=20;
+  lastDrawnPoints.forEach(p=>{
+    const d = Math.hypot(p.x-mx, p.y-my);
+    if(d<closestD){ closestD=d; closest=p; }
+  });
+  if(closest){
+    draggingPoint = closest;
+    overlay.setPointerCapture(e.pointerId);
+    overlay.style.cursor = 'grabbing';
+    e.preventDefault();
+  }
+});
+overlay.addEventListener('pointermove', e=>{
+  if(!draggingPoint) return;
+  const rect = overlay.getBoundingClientRect();
+  const mx = (e.clientX-rect.left) * (overlay.width/rect.width);
+  const my = (e.clientY-rect.top) * (overlay.height/rect.height);
+  const sx = overlay.width / videoW, sy = overlay.height / videoH;
+  const vx = mx/sx, vy = my/sy;
+  if(draggingPoint.kind === 'body'){
+    frames[draggingPoint.frameIndex].lm[draggingPoint.ref] = {x:vx, y:vy};
+  } else {
+    getBatMarks(draggingPoint.frameIndex)[draggingPoint.ref] = {x:vx, y:vy};
+  }
+  drawOverlayAtTime(video.currentTime);
+});
+window.addEventListener('pointerup', ()=>{
+  if(draggingPoint){
+    draggingPoint = null;
+    updateEditCursor();
+    if(frames.length) computeAndRender();
+  }
+});
+document.querySelectorAll('.view-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    skeletonMode = btn.dataset.view === 'skeleton';
+    video.style.opacity = skeletonMode ? '0' : '1';
+    drawOverlayAtTime(video.currentTime);
+  });
+});
+const batTrackBtn = document.getElementById('batTrackBtn');
+batTrackBtn.addEventListener('click', ()=>{
+  batTrackingOn = !batTrackingOn;
+  batTrackBtn.textContent = `Track Bat: ${batTrackingOn ? 'On' : 'Off'}`;
+  batTrackBtn.style.borderColor = batTrackingOn ? 'var(--clay)' : '';
+  drawOverlayAtTime(video.currentTime);
+});
+document.querySelectorAll('[data-jump]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    if(!video.paused) video.pause();
+    const key = btn.dataset.jump;
+    if(frames.length && keyIdx[key] !== undefined){
+      video.currentTime = frames[keyIdx[key]].t;
+    }
+  });
+});
+reanalyzeBtn.addEventListener('click', ()=>{
+  workspace.style.display='none';
+  dashboard.style.display='none';
+  footerNote.style.display='none';
+  uploadStage.style.display='block';
+  fileInput.value='';
+  batMarks = {};
+  batTrackingOn = false;
+  skeletonMode = false;
+  video.style.opacity = '1';
+  const btb = document.getElementById('batTrackBtn');
+  if(btb){ btb.textContent = 'Track Bat: Off'; btb.style.borderColor = ''; }
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.toggle('active', b.dataset.view==='video'));
+  lastMetrics = null;
+  updateSwingScoreBadge();
+});
+// ---------- metrics ----------
+function bodyScale(loadFrame){
+  const lm = loadFrame.lm;
+  const shoulderMid = mid(lm[11], lm[12]);
+  const ankleMid = mid(lm[27], lm[28]);
+  return dist(shoulderMid, ankleMid) * 1.65;
+}
+function computeAndRender(){
+  const L = frames[keyIdx.load];
+  const FP = frames[keyIdx.fp];
+  const C = frames[keyIdx.contact];
+  const scale = bodyScale(L);
+  const fmt = (v,d=1)=> Number.isFinite(v) ? v.toFixed(d) : '—';
+  const hipAngRaw = frames.map(f=>lineAngleDeg(f.lm[23], f.lm[24]));
+  const shAngRaw  = frames.map(f=>lineAngleDeg(f.lm[11], f.lm[12]));
+  const hipAng = unwrap(hipAngRaw);
+  const shAng  = unwrap(shAngRaw);
+  const hipRot = hipAng.map(a=>a-hipAng[keyIdx.load]);
+  const shRot  = shAng.map(a=>a-shAng[keyIdx.load]);
+  const separation = shRot.map((s,i)=>s-hipRot[i]);
+  const sepAtFP = Math.abs(separation[keyIdx.fp]);
+  const times = frames.map(f=>f.t);
+  const hipVel = smooth(derivative(hipAng, times), 5);
+  const shVel  = smooth(derivative(shAng, times), 5);
+  const winStart = keyIdx.load, winEnd = Math.max(keyIdx.contact+1, winStart+2);
+  function peakIndex(vel){
+    let pi = winStart, pv = 0;
+    for(let i=winStart;i<winEnd;i++){ if(Math.abs(vel[i])>Math.abs(pv)){ pv=vel[i]; pi=i; } }
+    return pi;
+  }
+  const hipPeakI = peakIndex(hipVel);
+  const shPeakI = peakIndex(shVel);
+  const windowDur = (frames[winEnd-1].t - frames[winStart].t) || 1;
+  const pctOf = (i)=> ((frames[i].t - frames[winStart].t) / windowDur) * 100;
+  const segments = [
+    {key:'pelvis', label:'Pelvis', pct: pctOf(hipPeakI)},
+    {key:'torso', label:'Torso', pct: pctOf(shPeakI)},
+  ];
+  const inOrder = segments[0].pct <= segments[1].pct;
+  const comContact = mid(C.lm[23], C.lm[24]);
+  const forwardSign = Math.sign(L.lm[frontIdx.ankle].x - L.lm[backIdx.ankle].x) || 1;
+  const contactBat = batMarks[keyIdx.contact] || null;
+  const pocSourceX = contactBat ? contactBat.tip.x : C.lm[frontIdx.wrist].x;
+  const poc = ((pocSourceX - comContact.x) * forwardSign) / scale * 100;
+  const pocSource = contactBat ? 'tracked bat' : 'hand proxy';
+  const strideLen = Math.abs(FP.lm[frontIdx.ankle].x - L.lm[frontIdx.ankle].x) / scale * 100;
+  const comLoad = mid(L.lm[23], L.lm[24]);
+  const comAtFP = mid(FP.lm[23], FP.lm[24]);
+  const comTravel = Math.hypot(comAtFP.x-comLoad.x, comAtFP.y-comLoad.y) / scale * 100;
+  function spineTiltAt(f){
+    const hipMid = mid(f.lm[23], f.lm[24]);
+    const shMid = mid(f.lm[11], f.lm[12]);
+    return lineAngleDeg(hipMid, shMid) + 90;
+  }
+  const spineTiltContact = spineTiltAt(C);
+  const frontKneeContact = angleAt(C.lm[frontIdx.knee], C.lm[frontIdx.hip], C.lm[frontIdx.ankle]);
+  const swStart = keyIdx.load, swEnd = Math.max(keyIdx.contact, swStart+1);
+  const handSpeeds = [];
+  for(let i=swStart+1;i<=swEnd;i++){
+    const dt = frames[i].t - frames[i-1].t;
+    if(dt <= 0) continue;
+    const lw = dist(frames[i].lm[15], frames[i-1].lm[15]) / dt;
+    const rw = dist(frames[i].lm[16], frames[i-1].lm[16]) / dt;
+    handSpeeds.push(Math.max(lw, rw) / scale);
+  }
+  let explosiveness = NaN;
+  if(handSpeeds.length >= 2){
+    const peak = Math.max(...handSpeeds);
+    const avg = handSpeeds.reduce((a,b)=>a+b,0) / handSpeeds.length;
+    explosiveness = avg > 0 ? peak / avg : NaN;
+  }
+  const headDX = (C.lm[0].x - L.lm[0].x) / scale * 100;
+  const headDY = (C.lm[0].y - L.lm[0].y) / scale * 100;
+  const headDrift = Math.hypot(headDX, headDY);
+  renderDashboard({ sepAtFP, segments, inOrder, poc, pocSource, strideLen, comTravel, spineTiltContact, frontKneeContact, headDrift, explosiveness }, fmt);
+}
+function renderDashboard(m, fmt){
+  dashboard.style.display='block';
+  lastMetrics = m;
+  lastFmt = fmt;
+  const sepFlag = m.sepAtFP >= 25 ? 'flag-good' : '';
+  const seqFlag = m.inOrder ? 'flag-good' : 'flag-warn';
+  const seqVerdict = m.inOrder
+    ? 'Efficient chain — pelvis leads, torso follows'
+    : 'Out of sequence — torso is peaking before (or with) the pelvis';
+  const dotColor = {pelvis:'#C1602E', torso:'#5C8A6E', arm:'#3FA7FF'};
+  const ordered = [...m.segments].sort((a,b)=>a.pct-b.pct);
+  let prevPos = -Infinity;
+  ordered.forEach(s=>{
+    let p = Math.max(3, Math.min(97, s.pct));
+    if(p - prevPos < 9) p = prevPos + 9;
+    s.dispPct = Math.min(97, p);
+    prevPos = s.dispPct;
+  });
+  const seqDots = m.segments.map(s=>`
+    <div style="position:absolute; left:${s.dispPct}%; top:50%; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; background:${dotColor[s.key]}; border:2px solid #0B0D10;"></div>
+  `).join('');
+  const seqLegend = m.segments.map(s=>`
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);">
+      <div style="width:10px;height:10px;border-radius:50%;background:${dotColor[s.key]}; flex-shrink:0;"></div>
+      <div style="font-family:'Inter'; font-size:13px; color:var(--text); flex:1;">${s.label}</div>
+      <div style="font-family:'JetBrains Mono'; font-size:13px; color:var(--text-dim);">${fmt(s.pct,0)}%</div>
+    </div>
+  `).join('');
+  const pocLabel = m.poc >= 0 ? 'out front' : 'deep';
+  dashboard.innerHTML = `
+    <div class="stitch-divider"></div>
+    <div class="add-baseline-bar">
+      <input type="text" id="baselineNameInput" placeholder="Label this swing (e.g. player name)" />
+      <button class="btn" id="addToBaselineBtn">Add to Baseline</button>
+      <button class="btn ghost" id="compareToBaselineBtn">Compare to Baseline</button>
+      <span class="confirm" id="addToBaselineConfirm">Added ✓</span>
+    </div>
+    <div class="add-baseline-bar" style="margin-top:10px;">
+      <input type="text" id="clientNameInput" placeholder="Client name" />
+      <button class="btn" id="saveToClientBtn">Save to Client Swings</button>
+      <span class="confirm" id="saveToClientConfirm">Saved ✓</span>
+    </div>
+    <div id="comparisonPanel"></div>
+    <div class="section-head" style="margin-top:28px;"><span class="num">01</span><h2>Hip–Shoulder Separation</h2><span class="note">at foot plant</span></div>
+    <div class="grid">
+      <div class="card ${sepFlag}"><div class="label">Separation @ Foot Plant</div><div class="value">${fmt(m.sepAtFP,0)}<span class="unit">°</span></div><div class="sub">The "X-factor" — how much the shoulders stay closed relative to the hips as you land.</div></div>
+    </div>
+    <div class="section-head"><span class="num">02</span><h2>Stride &amp; Weight Shift</h2><span class="note">load → foot plant</span></div>
+    <div class="grid">
+      <div class="card"><div class="label">Stride Length</div><div class="value">${fmt(m.strideLen,1)}<span class="unit">% ht</span></div><div class="sub">Front foot travel, load → foot plant.</div></div>
+      <div class="card"><div class="label">Center of Mass Travel</div><div class="value">${fmt(m.comTravel,1)}<span class="unit">% ht</span></div><div class="sub">Hip midpoint displacement, load → foot plant.</div></div>
+    </div>
+    <div class="section-head"><span class="num">03</span><h2>Kinematic Sequence</h2><span class="note">relative timing, load → contact</span></div>
+    <div class="chart-card">
+      <div class="label">Peak rotation order — pelvis → torso</div>
+      <div style="position:relative; height:14px; margin:18px 8px 22px;">
+        <div style="position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:2px; background:var(--line);"></div>
+        ${seqDots}
+      </div>
+      <div style="margin-top:4px;">${seqLegend}</div>
+    </div>
+    <div class="grid">
+      <div class="card ${seqFlag}" style="grid-column:1/-1;"><div class="label">Sequencing</div><div class="value" style="font-size:18px;">${seqVerdict}</div><div class="sub">Timing shown as % of your load → contact window, so it holds up across clips shot at different slow-mo speeds.</div></div>
+    </div>
+    <div class="section-head"><span class="num">04</span><h2>Point of Contact</h2><span class="note">relative to body</span></div>
+    <div class="grid">
+      <div class="card"><div class="label">Contact Point</div><div class="value">${fmt(Math.abs(m.poc),0)}<span class="unit">% ht ${pocLabel}</span></div><div class="sub">${m.pocSource === 'tracked bat' ? 'Using your tracked bat tip position at contact.' : 'Lead hand position vs. center of mass — a proxy, since no bat markers are placed at Contact yet.'}</div></div>
+    </div>
+    <div class="section-head"><span class="num">05</span><h2>Contact Posture</h2></div>
+    <div class="grid">
+      <div class="card"><div class="label">Front Knee @ Contact</div><div class="value">${fmt(m.frontKneeContact,0)}<span class="unit">°</span></div><div class="sub">Bracing on the front side through impact.</div></div>
+      <div class="card"><div class="label">Spine Tilt @ Contact</div><div class="value">${fmt(m.spineTiltContact,0)}<span class="unit">°</span></div><div class="sub">0° = perfectly vertical. Anchored to Contact, so double-check that marker if this looks off.</div></div>
+    </div>
+    <div class="section-head"><span class="num">06</span><h2>Stability &amp; Explosiveness</h2></div>
+    <div class="grid">
+      <div class="card"><div class="label">Head Drift</div><div class="value">${fmt(m.headDrift,1)}<span class="unit">% ht</span></div><div class="sub">Total head movement, load → contact. Lower is more stable.</div></div>
+      <div class="card"><div class="label">Explosiveness</div><div class="value">${fmt(m.explosiveness,1)}<span class="unit">× avg</span></div><div class="sub">Peak hand speed vs. its own average through the swing. A pure ratio, so it's comparable across any frame rate or slow-mo setting. Higher = sharper acceleration.</div></div>
+    </div>
+  `;
+  document.getElementById('addToBaselineBtn').addEventListener('click', addCurrentToBaseline);
+  document.getElementById('compareToBaselineBtn').addEventListener('click', compareToBaseline);
+  document.getElementById('saveToClientBtn').addEventListener('click', saveCurrentToClient);
+  updateSwingScoreBadge();
+  dashboard.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+// ---------- Baseline tab ----------
+const BASELINE_KEY = 'swinglab_baseline_v1';
+let lastMetrics = null;
+let lastFmt = null;
+function loadBaseline(){
+  try{ return JSON.parse(localStorage.getItem(BASELINE_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function saveBaselineArr(arr){
+  try{ localStorage.setItem(BASELINE_KEY, JSON.stringify(arr)); }
+  catch(e){ console.warn('Could not save baseline (storage unavailable):', e); }
+}
+document.getElementById('exportBaselineBtn').addEventListener('click', ()=>{
+  const baseline = loadBaseline();
+  const clients = loadClients();
+  const payload = {
+    app: 'swing-lab-backup',
+    exportedAt: new Date().toISOString(),
+    baselineCount: baseline.length,
+    clientCount: clients.length,
+    baseline,
+    clients
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `swing-lab-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  const confirm = document.getElementById('exportBaselineConfirm');
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 1800);
+});
+document.getElementById('importBaselineBtn').addEventListener('click', ()=>{
+  document.getElementById('importBaselineFile').click();
+});
+document.getElementById('importBaselineFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const incomingBaseline = Array.isArray(parsed.baseline) ? parsed.baseline
+      : (Array.isArray(parsed.entries) ? parsed.entries
+      : (Array.isArray(parsed) ? parsed : []));
+    const incomingClients = Array.isArray(parsed.clients) ? parsed.clients : [];
+    if(incomingBaseline.length === 0 && incomingClients.length === 0){
+      throw new Error('Not a recognized backup file');
+    }
+    const existingBaseline = loadBaseline();
+    const existingBaselineTs = new Set(existingBaseline.map(e=>e.ts));
+    const mergedBaseline = existingBaseline.slice();
+    let addedBaseline = 0;
+    incomingBaseline.forEach(entry=>{
+      if(entry && typeof entry === 'object' && !existingBaselineTs.has(entry.ts)){
+        mergedBaseline.push(entry);
+        existingBaselineTs.add(entry.ts);
+        addedBaseline++;
+      }
+    });
+    saveBaselineArr(mergedBaseline);
+    const existingClients = loadClients();
+    const existingClientsTs = new Set(existingClients.map(e=>e.ts));
+    const mergedClients = existingClients.slice();
+    let addedClients = 0;
+    incomingClients.forEach(entry=>{
+      if(entry && typeof entry === 'object' && !existingClientsTs.has(entry.ts)){
+        mergedClients.push(entry);
+        existingClientsTs.add(entry.ts);
+        addedClients++;
+      }
+    });
+    saveClientsArr(mergedClients);
+    renderBaselineTab();
+    renderClientsTab();
+    updateSwingScoreBadge();
+    const confirm = document.getElementById('importBaselineConfirm');
+    confirm.textContent = `Imported ${addedBaseline} baseline, ${addedClients} client swing${addedClients===1?'':'s'} ✓`;
+    confirm.classList.add('show');
+    setTimeout(()=>confirm.classList.remove('show'), 2600);
+  }catch(err){
+    console.error('Backup import failed:', err);
+    alert("Couldn't read that file — make sure it's a backup exported from Swing Lab.");
+  }
+  e.target.value = '';
+});
+function addCurrentToBaseline(){
+  if(!lastMetrics) return;
+  const input = document.getElementById('baselineNameInput');
+  const name = (input.value || '').trim() || `Swing ${new Date().toLocaleDateString()}`;
+  const entry = {
+    name,
+    ts: Date.now(),
+    sepAtFP: lastMetrics.sepAtFP,
+    pelvisPct: lastMetrics.segments[0].pct,
+    torsoPct: lastMetrics.segments[1].pct,
+    inOrder: lastMetrics.inOrder,
+    poc: lastMetrics.poc,
+    strideLen: lastMetrics.strideLen,
+    comTravel: lastMetrics.comTravel,
+    spineTiltContact: lastMetrics.spineTiltContact,
+    frontKneeContact: lastMetrics.frontKneeContact,
+    headDrift: lastMetrics.headDrift,
+    explosiveness: lastMetrics.explosiveness
+  };
+  const arr = loadBaseline();
+  arr.push(entry);
+  saveBaselineArr(arr);
+  input.value = '';
+  const confirm = document.getElementById('addToBaselineConfirm');
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 1800);
+  renderBaselineTab();
+  updateSwingScoreBadge();
+}
+// ---------- Client Swings ----------
+const CLIENT_KEY = 'swinglab_clients_v1';
+function loadClients(){
+  try{ return JSON.parse(localStorage.getItem(CLIENT_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function saveClientsArr(arr){
+  try{ localStorage.setItem(CLIENT_KEY, JSON.stringify(arr)); }
+  catch(e){ console.warn('Could not save client swings (storage unavailable):', e); }
+}
+function saveCurrentToClient(){
+  if(!lastMetrics) return;
+  const input = document.getElementById('clientNameInput');
+  const client = (input.value || '').trim();
+  if(!client){
+    input.focus();
+    return;
+  }
+  const entry = {
+    client,
+    ts: Date.now(),
+    sepAtFP: lastMetrics.sepAtFP,
+    pelvisPct: lastMetrics.segments[0].pct,
+    torsoPct: lastMetrics.segments[1].pct,
+    inOrder: lastMetrics.inOrder,
+    poc: lastMetrics.poc,
+    strideLen: lastMetrics.strideLen,
+    comTravel: lastMetrics.comTravel,
+    spineTiltContact: lastMetrics.spineTiltContact,
+    frontKneeContact: lastMetrics.frontKneeContact,
+    headDrift: lastMetrics.headDrift,
+    explosiveness: lastMetrics.explosiveness
+  };
+  const arr = loadClients();
+  arr.push(entry);
+  saveClientsArr(arr);
+  input.value = '';
+  const confirm = document.getElementById('saveToClientConfirm');
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 1800);
+  renderClientsTab();
+}
+function removeClientSwing(ts){
+  const arr = loadClients().filter(e=>e.ts !== ts);
+  saveClientsArr(arr);
+  renderClientsTab();
+}
+function removeClient(clientName){
+  if(!confirm(`Remove all logged swings for "${clientName}"? This can't be undone.`)) return;
+  const arr = loadClients().filter(e=>e.client !== clientName);
+  saveClientsArr(arr);
+  renderClientsTab();
+}
+let clientOpenState = {};
+function renderClientsTab(){
+  const arr = loadClients();
+  const empty = document.getElementById('clientsEmpty');
+  const content = document.getElementById('clientsContent');
+  document.getElementById('clientsCount').textContent = `${arr.length} swing${arr.length===1?'':'s'} logged`;
+  if(arr.length === 0){
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  const fmt = (v,d=1)=> Number.isFinite(v) ? v.toFixed(d) : '—';
+  const filterText = (document.getElementById('clientSearchInput').value || '').trim().toLowerCase();
+  const groups = {};
+  arr.forEach(e=>{
+    const key = (e.client || 'Unnamed').trim();
+    if(!groups[key]) groups[key] = [];
+    groups[key].push(e);
+  });
+  const names = Object.keys(groups)
+    .filter(n => !filterText || n.toLowerCase().includes(filterText))
+    .sort((a,b)=>{
+      const latestA = Math.max(...groups[a].map(e=>e.ts));
+      const latestB = Math.max(...groups[b].map(e=>e.ts));
+      return latestB - latestA;
+    });
+  if(names.length === 0){
+    document.getElementById('clientsList').innerHTML = `<div class="chart-card"><div class="sub">No clients match "${escapeHtml(filterText)}".</div></div>`;
+    return;
+  }
+  document.getElementById('clientsList').innerHTML = names.map(name=>{
+    const swings = [...groups[name]].sort((a,b)=>b.ts-a.ts);
+    const isOpen = clientOpenState[name] !== false;
+    const rows = swings.map(e=>`
+      <div class="client-swing-row">
+        <div class="csr-top">
+          <span class="csr-date">${new Date(e.ts).toLocaleDateString()} · ${new Date(e.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+          <button class="remove-btn" data-remove-swing="${e.ts}" title="Remove this swing" style="margin-left:auto;">✕</button>
+        </div>
+        <div class="csr-stats">
+          <span>Sep ${fmt(e.sepAtFP,0)}°</span>
+          <span>Stride ${fmt(e.strideLen,1)}% ht</span>
+          <span>COM ${fmt(e.comTravel,1)}% ht</span>
+          <span>POC ${fmt(Math.abs(e.poc),0)}% ht</span>
+          <span>Spine ${fmt(e.spineTiltContact,0)}°</span>
+          <span>Knee ${fmt(e.frontKneeContact,0)}°</span>
+          <span>Head ${fmt(e.headDrift,1)}% ht</span>
+          <span>${Number.isFinite(e.explosiveness)?`Explo ${fmt(e.explosiveness,1)}×`:''}</span>
+          <span>${e.inOrder===true?'Sequenced ✓':e.inOrder===false?'Out of sequence':''}</span>
+        </div>
+      </div>
+    `).join('');
+    return `
+      <div class="client-card">
+        <div class="client-head" data-client-toggle="${escapeHtml(name)}">
+          <h3>${escapeHtml(name)}</h3>
+          <span class="client-count">${swings.length} swing${swings.length===1?'':'s'}</span>
+          <span class="client-toggle">${isOpen ? '▾ collapse' : '▸ expand'}</span>
+          <button class="client-remove" data-remove-client="${escapeHtml(name)}">Remove client</button>
+        </div>
+        <div class="client-swings ${isOpen?'open':''}">
+          ${rows}
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.querySelectorAll('[data-client-toggle]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      if(e.target.closest('.client-remove')) return;
+      const name = el.dataset.clientToggle;
+      clientOpenState[name] = !(clientOpenState[name] !== false);
+      renderClientsTab();
+    });
+  });
+  document.querySelectorAll('[data-remove-client]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      removeClient(btn.dataset.removeClient);
+    });
+  });
+  document.querySelectorAll('[data-remove-swing]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      removeClientSwing(Number(btn.dataset.removeSwing));
+    });
+  });
+}
+document.getElementById('clientSearchInput').addEventListener('input', renderClientsTab);
+// ---------- manual baseline entry ----------
+const manualEntryToggle = document.getElementById('manualEntryToggle');
+const manualEntryForm = document.getElementById('manualEntryForm');
+manualEntryToggle.addEventListener('click', ()=>{
+  manualEntryForm.style.display = manualEntryForm.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('manualEntryCancel').addEventListener('click', ()=>{
+  manualEntryForm.style.display = 'none';
+});
+function numOrUndef(id){
+  const v = document.getElementById(id).value;
+  if(v === '' || v === null) return undefined;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+document.getElementById('manualEntrySubmit').addEventListener('click', ()=>{
+  const name = (document.getElementById('mLabel').value || '').trim() || `Manual entry ${new Date().toLocaleDateString()}`;
+  const pocDir = parseFloat(document.getElementById('mPocDir').value) || 1;
+  const pocRaw = numOrUndef('mPoc');
+  const seqVal = document.getElementById('mSeq').value;
+  const entry = {
+    name,
+    ts: Date.now(),
+    manual: true,
+    sepAtFP: numOrUndef('mSep'),
+    strideLen: numOrUndef('mStride'),
+    comTravel: numOrUndef('mCom'),
+    poc: pocRaw !== undefined ? Math.abs(pocRaw) * pocDir : undefined,
+    spineTiltContact: numOrUndef('mSpine'),
+    frontKneeContact: numOrUndef('mKnee'),
+    headDrift: numOrUndef('mHead'),
+    inOrder: seqVal === 'yes' ? true : (seqVal === 'no' ? false : undefined)
+  };
+  const hasAnyValue = ['sepAtFP','strideLen','comTravel','poc','spineTiltContact','frontKneeContact','headDrift']
+    .some(k=>Number.isFinite(entry[k]));
+  if(!hasAnyValue){
+    document.getElementById('mSep').focus();
+    return;
+  }
+  const arr = loadBaseline();
+  arr.push(entry);
+  saveBaselineArr(arr);
+  ['mLabel','mSep','mStride','mCom','mPoc','mSpine','mKnee','mHead'].forEach(id=>{
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('mPocDir').value = '1';
+  document.getElementById('mSeq').value = 'unknown';
+  const confirm = document.getElementById('manualEntryConfirm');
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 1800);
+  renderBaselineTab();
+  updateSwingScoreBadge();
+});
+function removeBaselineEntry(ts){
+  const arr = loadBaseline().filter(e=>e.ts !== ts);
+  saveBaselineArr(arr);
+  renderBaselineTab();
+  updateSwingScoreBadge();
+}
+function meanStd(arr){
+  const clean = arr.filter(v=>Number.isFinite(v));
+  const n = clean.length;
+  if(!n) return {mean:0, std:0, n:0};
+  const mean = clean.reduce((a,b)=>a+b,0)/n;
+  const variance = clean.reduce((a,b)=>a+(b-mean)*(b-mean),0)/n;
+  return {mean, std:Math.sqrt(variance), n};
+}
+// ---------- Swing Score ----------
+const SWING_SCORE_WEIGHTS = {
+  sepAtFP: 1.2,
+  poc: 1.1,
+  strideLen: 0.8,
+  comTravel: 0.8,
+  spineTiltContact: 0.9,
+  frontKneeContact: 0.9,
+  headDrift: 1.0,
+  explosiveness: 1.0,
+  sequencing: 1.3
+};
+function metricSubScore(current, stats, fallbackScale){
+  if(!Number.isFinite(current) || stats.n === 0) return null;
+  const scale = (stats.n >= 3 && stats.std > 0.5) ? stats.std : fallbackScale;
+  const z = scale > 0.0001 ? (current - stats.mean) / scale : 0;
+  return { score: 100 * Math.exp(-0.5 * Math.pow(z/1.5, 2)), z };
+}
+function computeSwingScore(m){
+  const arr = loadBaseline();
+  if(arr.length === 0 || !m) return null;
+  const metricDefs = [
+    {key:'sepAtFP', current:m.sepAtFP, get:e=>e.sepAtFP},
+    {key:'poc', current:Math.abs(m.poc), get:e=>Math.abs(e.poc)},
+    {key:'strideLen', current:m.strideLen, get:e=>e.strideLen},
+    {key:'comTravel', current:m.comTravel, get:e=>e.comTravel},
+    {key:'spineTiltContact', current:m.spineTiltContact, get:e=>e.spineTiltContact},
+    {key:'frontKneeContact', current:m.frontKneeContact, get:e=>e.frontKneeContact},
+    {key:'headDrift', current:m.headDrift, get:e=>e.headDrift},
+    {key:'explosiveness', current:m.explosiveness, get:e=>e.explosiveness},
+  ];
+  let weightedSum = 0, weightTotal = 0;
+  const breakdown = [];
+  metricDefs.forEach(def=>{
+    const stats = meanStd(arr.map(def.get));
+    const FALLBACK_SCALE = { explosiveness: 0.8 };
+    const fallbackScale = FALLBACK_SCALE[def.key] || (DRILL_DB[def.key] && DRILL_DB[def.key].fallbackScale) || 5;
+    const result = metricSubScore(def.current, stats, fallbackScale);
+    if(!result) return;
+    const weight = SWING_SCORE_WEIGHTS[def.key];
+    weightedSum += result.score * weight;
+    weightTotal += weight;
+    breakdown.push({key:def.key, score:result.score, weight});
+  });
+  const seqDiffCurrent = m.segments[1].pct - m.segments[0].pct;
+  const seqBaselineVals = arr
+    .filter(e=>Number.isFinite(e.torsoPct) && Number.isFinite(e.pelvisPct))
+    .map(e=>e.torsoPct - e.pelvisPct);
+  if(seqBaselineVals.length){
+    const stats = meanStd(seqBaselineVals);
+    const result = metricSubScore(seqDiffCurrent, stats, 15);
+    if(result){
+      const weight = SWING_SCORE_WEIGHTS.sequencing;
+      weightedSum += result.score * weight;
+      weightTotal += weight;
+      breakdown.push({key:'sequencing', score:result.score, weight});
+    }
+  }
+  if(weightTotal === 0) return null;
+  const composite = Math.round(Math.max(0, Math.min(100, weightedSum / weightTotal)));
+  return { score: composite, breakdown, n: arr.length };
+}
+function updateSwingScoreBadge(){
+  const badge = document.getElementById('swingScoreBadge');
+  const ring = document.getElementById('ssbRing');
+  const valEl = document.getElementById('ssbValue');
+  const subEl = document.getElementById('ssbSub');
+  if(!lastMetrics){ badge.style.display = 'none'; return; }
+  const result = computeSwingScore(lastMetrics);
+  badge.style.display = 'block';
+  if(!result){
+    valEl.textContent = '--';
+    ring.style.setProperty('--pct', 0);
+    ring.style.setProperty('--score-color', 'var(--line)');
+    subEl.textContent = 'log baseline first';
+    return;
+  }
+  valEl.textContent = result.score;
+  ring.style.setProperty('--pct', result.score);
+  const color = result.score >= 85 ? 'var(--grass)'
+    : result.score >= 65 ? 'var(--blue)'
+    : result.score >= 50 ? 'var(--clay)'
+    : 'var(--stitch)';
+  ring.style.setProperty('--score-color', color);
+  subEl.textContent = `vs ${result.n} baseline swing${result.n===1?'':'s'}`;
+}
+document.getElementById('swingScoreBadge').addEventListener('click', ()=>{
+  if(!lastMetrics) return;
+  document.getElementById('mainTabs').querySelector('[data-tab="analyze"]').click();
+  compareToBaseline();
+});
+function compareToBaseline(){
+  const panel = document.getElementById('comparisonPanel');
+  if(!panel || !lastMetrics) return;
+  const arr = loadBaseline();
+  if(arr.length === 0){
+    panel.innerHTML = `<div class="chart-card"><div class="label">Vs. Baseline</div><div class="sub">No baseline swings logged yet — add a few MLB swings first, then this'll show how this swing compares.</div></div>`;
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+    return;
+  }
+  const n = arr.length;
+  const fmt = lastFmt;
+  const defs = [
+    {key:'sepAtFP', label:'Separation @ Foot Plant', unit:'°', current:lastMetrics.sepAtFP},
+    {key:'strideLen', label:'Stride Length', unit:'% ht', current:lastMetrics.strideLen},
+    {key:'comTravel', label:'Center of Mass Travel', unit:'% ht', current:lastMetrics.comTravel},
+    {key:'poc', label:'Point of Contact', unit:'% ht', current:lastMetrics.poc, abs:true},
+    {key:'spineTiltContact', label:'Spine Tilt @ Contact', unit:'°', current:lastMetrics.spineTiltContact},
+    {key:'frontKneeContact', label:'Front Knee @ Contact', unit:'°', current:lastMetrics.frontKneeContact},
+    {key:'headDrift', label:'Head Drift', unit:'% ht', current:lastMetrics.headDrift},
+    {key:'explosiveness', label:'Explosiveness', unit:'× avg', current:lastMetrics.explosiveness},
+  ];
+  const scoreResult = computeSwingScore(lastMetrics);
+  const scoreByKey = {};
+  if(scoreResult) scoreResult.breakdown.forEach(b=>{ scoreByKey[b.key] = b.score; });
+  const rows = defs.map(d=>{
+    const stats = meanStd(arr.map(e=>e[d.key]));
+    const diff = d.current - stats.mean;
+    const z = stats.std > 0.0001 ? diff/stats.std : 0;
+    const isOutlier = n>=3 && Math.abs(z) >= 1.5;
+    const dispCurrent = d.abs ? Math.abs(d.current) : d.current;
+    const dispMean = d.abs ? Math.abs(stats.mean) : stats.mean;
+    const subScore = scoreByKey[d.key];
+    return `
+      <div class="baseline-row">
+        <div style="flex:1;">
+          <div class="name">${d.label}${isOutlier ? ' <span style="color:var(--stitch);">— outlier</span>' : ''}</div>
+          <div class="date">You: ${fmt(dispCurrent,1)}${d.unit} · Baseline avg: ${fmt(dispMean,1)}${d.unit}${Number.isFinite(subScore) ? ` · Score ${Math.round(subScore)}/100` : ''}</div>
+        </div>
+        <div class="stats" style="margin-left:0;">
+          <span style="color:${isOutlier?'var(--stitch)':'var(--text-dim)'};">${diff>=0?'+':''}${fmt(diff,1)}${d.unit}</span>
+        </div>
+      </div>`;
+  }).join('');
+  const inOrderCount = arr.filter(e=>e.inOrder).length;
+  const seqNote = lastMetrics.inOrder
+    ? `Sequenced correctly (pelvis before torso) — matches ${inOrderCount}/${n} baseline swings.`
+    : `Out of sequence (torso peaking before/with pelvis) — ${inOrderCount}/${n} baseline swings sequence correctly. This is worth a look.`;
+  const scoreHeader = scoreResult
+    ? `<div class="baseline-row"><div class="name">Swing Score</div><div class="stats" style="margin-left:0; font-size:16px; font-weight:700; color:var(--text);">${scoreResult.score}/100</div></div>`
+    : '';
+  panel.innerHTML = `
+    <div class="chart-card">
+      <div class="label">Vs. Baseline (${n} swing${n===1?'':'s'})</div>
+      ${scoreHeader}
+      ${rows}
+      <div class="baseline-row"><div class="name">Sequencing</div></div>
+      <div class="sub" style="margin-top:2px; margin-bottom:10px;">${seqNote}</div>
+      <div class="sub">${n<3 ? 'Add at least 2-3 baseline swings for outlier flags and the swing score to mean much — right now this is just a straight comparison.' : 'Outlier = 1.5+ standard deviations from your baseline average. Swing Score weights each metric by how central it is to good mechanics.'}</div>
+    </div>
+  `;
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function renderBaselineTab(){
+  const arr = loadBaseline();
+  const countEl = document.getElementById('baselineCount');
+  countEl.textContent = `${arr.length} swing${arr.length===1?'':'s'} logged`;
+  const empty = document.getElementById('baselineEmpty');
+  const content = document.getElementById('baselineContent');
+  if(arr.length === 0){
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  const fmt = (v,d=1)=> Number.isFinite(v) ? v.toFixed(d) : '—';
+  const sep = meanStd(arr.map(e=>e.sepAtFP));
+  const stride = meanStd(arr.map(e=>e.strideLen));
+  const com = meanStd(arr.map(e=>e.comTravel));
+  const poc = meanStd(arr.map(e=>e.poc));
+  const spine = meanStd(arr.map(e=>e.spineTiltContact));
+  const knee = meanStd(arr.map(e=>e.frontKneeContact));
+  const head = meanStd(arr.map(e=>e.headDrift));
+  const explos = meanStd(arr.map(e=>e.explosiveness));
+  const pelvisPct = meanStd(arr.map(e=>e.pelvisPct));
+  const torsoPct = meanStd(arr.map(e=>e.torsoPct));
+  const inOrderCount = arr.filter(e=>e.inOrder).length;
+  const pocLabel = poc.mean >= 0 ? 'out front' : 'deep';
+  document.getElementById('baselineAvgGrid').innerHTML = `
+    <div class="card"><div class="label">Separation @ Foot Plant</div><div class="value">${fmt(sep.mean,0)}<span class="unit">° avg</span></div><div class="sub">± ${fmt(sep.std,0)}° across ${sep.n} swing${sep.n===1?'':'s'}</div></div>
+    <div class="card"><div class="label">Stride Length</div><div class="value">${fmt(stride.mean,1)}<span class="unit">% ht avg</span></div><div class="sub">± ${fmt(stride.std,1)}% ht${stride.n<arr.length?` (${stride.n} logged)`:''}</div></div>
+    <div class="card"><div class="label">Center of Mass Travel</div><div class="value">${fmt(com.mean,1)}<span class="unit">% ht avg</span></div><div class="sub">± ${fmt(com.std,1)}% ht${com.n<arr.length?` (${com.n} logged)`:''}</div></div>
+    <div class="card"><div class="label">Point of Contact</div><div class="value">${fmt(Math.abs(poc.mean),0)}<span class="unit">% ht ${pocLabel}</span></div><div class="sub">± ${fmt(poc.std,1)}% ht</div></div>
+    <div class="card"><div class="label">Spine Tilt @ Contact</div><div class="value">${fmt(spine.mean,0)}<span class="unit">° avg</span></div><div class="sub">± ${fmt(spine.std,0)}°${spine.n<arr.length?` (${spine.n} logged)`:''}</div></div>
+    <div class="card"><div class="label">Front Knee @ Contact</div><div class="value">${fmt(knee.mean,0)}<span class="unit">° avg</span></div><div class="sub">± ${fmt(knee.std,0)}°</div></div>
+    <div class="card"><div class="label">Head Drift</div><div class="value">${fmt(head.mean,1)}<span class="unit">% ht avg</span></div><div class="sub">± ${fmt(head.std,1)}% ht</div></div>
+    <div class="card"><div class="label">Explosiveness</div><div class="value">${explos.n ? fmt(explos.mean,1) : '—'}<span class="unit">× avg</span></div><div class="sub">${explos.n ? `± ${fmt(explos.std,1)}${explos.n<arr.length?` (${explos.n} logged)`:''}` : 'not logged on any swing yet'}</div></div>
+    <div class="card" style="grid-column:1/-1;"><div class="label">Sequencing</div><div class="value" style="font-size:18px;">${inOrderCount}/${arr.length} swings pelvis-leads-torso</div><div class="sub">Avg peak timing — pelvis at ${fmt(pelvisPct.mean,0)}%, torso at ${fmt(torsoPct.mean,0)}% of load→contact</div></div>
+  `;
+  document.getElementById('baselineListNote').textContent = `newest first`;
+  const sorted = [...arr].sort((a,b)=>b.ts-a.ts);
+  document.getElementById('baselineList').innerHTML = sorted.map(e=>`
+    <div class="baseline-row">
+      <div>
+        <div class="name">${escapeHtml(e.name)}${e.manual ? ' <span style="color:var(--text-faint); font-weight:400;">(manual)</span>' : ''}</div>
+        <div class="date">${new Date(e.ts).toLocaleDateString()}</div>
+      </div>
+      <div class="stats">
+        <span>Sep ${fmt(e.sepAtFP,0)}°</span>
+        <span>POC ${fmt(Math.abs(e.poc),0)}%</span>
+        <span>Knee ${fmt(e.frontKneeContact,0)}°</span>
+      </div>
+      <button class="remove-btn" data-ts="${e.ts}" title="Remove">✕</button>
+    </div>
+  `).join('');
+  document.querySelectorAll('.remove-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      removeBaselineEntry(Number(btn.dataset.ts));
+    });
+  });
+}
+function escapeHtml(s){
+  const div = document.createElement('div');
+  div.textContent = s == null ? '' : s;
+  return div.innerHTML;
+}
+// ---------- Drill Routine ----------
+const DRILL_DB = {
+  sepAtFP: {
+    label: 'Hip-Shoulder Separation', unit:'°', fallbackScale: 8,
+    drills: [
+      {name:'Hip & Shoulder Separation', desc:'A dedicated med ball drill for the feeling itself — load the hips, keep the shoulders back, then let the torso release after.'},
+      {name:"Hook 'em Around the Ball", desc:'Med ball version of the hip-hinge-and-coil pattern — builds the feel for separation using a throw instead of a swing.'},
+      {name:'Kneeling Hip Load', desc:'Swinging from a kneeling stance removes the legs from the equation, isolating the feel of loading the hips independent of any stride.'},
+      {name:'Hold-at-Launch Drill', desc:'Pause right at launch position, hips open and shoulders still closed, before continuing through — isolates the separated position itself.'},
+      {name:'Offset Closed Tee', desc:'Restrict lead-hip rotation to force more torso turn relative to the hips — useful if separation collapses too early.'},
+    ]
+  },
+  sequencing: {
+    label: 'Kinematic Sequence', unit:'', fallbackScale: 1,
+    drills: [
+      {name:"Kershaw's Around the Ball", desc:'A rotational med ball throw that rewards firing the hips first and letting the torso, arms, and release follow in order.'},
+      {name:"PVC Stop-and-Go's", desc:'Start the swing, stop on command, then resume — breaks the motion into pieces so an out-of-order kinetic chain becomes obvious.'},
+      {name:"Hook 'Em Drill", desc:'Start from a coiled, hip-hinged position before you swing — reinforces hips firing first, torso following.'},
+    ]
+  },
+  poc: {
+    label: 'Point of Contact', unit:'% ht', fallbackScale: 5,
+    drills: [
+      {name:'Stop-at-Contact Drill', desc:'Swing and freeze exactly at the moment of (would-be) contact — makes it easy to check where contact is actually happening relative to the body.'},
+      {name:'High/Middle/Low Ball-Flight Drill', desc:'Work tee positions that force high, middle, and low ball flight in sequence — inconsistent contact depth usually shows up as an inability to control the flight.'},
+      {name:'Nine-Zone Tee Ladder', desc:'Nine tee positions across depth and height. Work through the grid hitting line drives at each, to build a real feel for contact point at every zone.'},
+    ]
+  },
+  strideLen: {
+    label: 'Stride Length', unit:'% ht', fallbackScale: 3,
+    drills: [
+      {name:'Stride-to-Tee Constraint', desc:'A physical marker set at target stride distance — landing short or long of it is immediate, visible feedback instead of a guess.'},
+      {name:'Controlled Fall to Launch', desc:'Let your weight fall forward into launch position under control rather than muscling a stride — keeps stride length honest and repeatable.'},
+    ]
+  },
+  comTravel: {
+    label: 'Center of Mass Travel', unit:'% ht', fallbackScale: 2.5,
+    drills: [
+      {name:'Rotational Toss', desc:'A standing med ball throw that builds lower-body-initiated force without a bat in hand to compensate, reinforcing a real weight shift.'},
+      {name:'Controlled Fall Drill', desc:'Let gravity initiate the weight shift by controlled-falling toward the front side, rather than lunging or staying too far back.'},
+      {name:'Step Back Drill', desc:'Step back and then forward into the swing to build a clean, repeatable timing mechanism for how the weight transfers forward.'},
+    ]
+  },
+  spineTiltContact: {
+    label: 'Spine Tilt @ Contact', unit:'°', fallbackScale: 6,
+    drills: [
+      {name:'PVC Swing Recoils', desc:'Swing with a PVC pipe across the shoulders and recoil back to start after each rep — reinforces holding spine angle through rotation instead of losing it into contact.'},
+    ]
+  },
+  frontKneeContact: {
+    label: 'Front Knee @ Contact', unit:'°', fallbackScale: 8,
+    drills: [
+      {name:'Braced Landing Reps off Tee', desc:"Slow-motion swings off a tee, freezing at foot plant to feel a knee that's flexed but not collapsing."},
+    ]
+  },
+  headDrift: {
+    label: 'Head Drift', unit:'% ht', fallbackScale: 2,
+    drills: [
+      {name:'Track-and-Catch Drill', desc:'Track a tossed ball all the way in and catch it bare-handed — keeps the head still and the eyes locked the way a stable swing requires.'},
+    ]
+  },
+};
+function renderDrillsTab(){
+  const empty = document.getElementById('drillsEmpty');
+  const content = document.getElementById('drillsContent');
+  const subtitle = document.getElementById('drillsSubtitle');
+  if(!lastMetrics){
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    document.getElementById('drillsEmptyTitle').textContent = 'Analyze a swing first';
+    document.getElementById('drillsEmptyText').textContent = 'Head to the Analyze tab, run a swing through it, then come back here for a routine built off that swing vs. your baseline.';
+    subtitle.textContent = '';
+    return;
+  }
+  const arr = loadBaseline();
+  if(arr.length === 0){
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    document.getElementById('drillsEmptyTitle').textContent = 'No baseline to compare against yet';
+    document.getElementById('drillsEmptyText').textContent = 'Log at least a few swings in the Baseline tab first — the routine is built from how this swing compares to that average.';
+    subtitle.textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  subtitle.textContent = `vs. ${arr.length} baseline swing${arr.length===1?'':'s'}`;
+  const fmt = (v,d=1)=> Number.isFinite(v) ? v.toFixed(d) : '—';
+  const current = {
+    sepAtFP: lastMetrics.sepAtFP,
+    poc: Math.abs(lastMetrics.poc),
+    strideLen: lastMetrics.strideLen,
+    comTravel: lastMetrics.comTravel,
+    spineTiltContact: lastMetrics.spineTiltContact,
+    frontKneeContact: lastMetrics.frontKneeContact,
+    headDrift: lastMetrics.headDrift,
+  };
+  const baselineVals = {
+    sepAtFP: arr.map(e=>e.sepAtFP),
+    poc: arr.map(e=>Math.abs(e.poc)),
+    strideLen: arr.map(e=>e.strideLen),
+    comTravel: arr.map(e=>e.comTravel),
+    spineTiltContact: arr.map(e=>e.spineTiltContact),
+    frontKneeContact: arr.map(e=>e.frontKneeContact),
+    headDrift: arr.map(e=>e.headDrift),
+  };
+  const scored = [];
+  Object.keys(DRILL_DB).forEach(key=>{
+    if(key === 'sequencing') return;
+    const stats = meanStd(baselineVals[key]);
+    if(!Number.isFinite(current[key])) return;
+    const scale = (stats.n >= 3 && stats.std > 0.5) ? stats.std : DRILL_DB[key].fallbackScale;
+    const diff = current[key] - stats.mean;
+    const score = Math.abs(diff) / scale;
+    scored.push({key, diff, mean:stats.mean, current:current[key], score, n:stats.n});
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  const inOrderCount = arr.filter(e=>e.inOrder).length;
+  const seqFlagged = lastMetrics.inOrder === false;
+  const FOCUS_THRESHOLD = 0.9;
+  const focus = scored.filter(s=>s.score >= FOCUS_THRESHOLD).slice(0, 5);
+  const onTarget = scored.filter(s=>s.score < FOCUS_THRESHOLD);
+  let focusHtml = '';
+  if(seqFlagged){
+    const d = DRILL_DB.sequencing;
+    focusHtml += `
+      <div class="focus-card">
+        <div class="focus-head">
+          <h3>${d.label}</h3>
+          <span class="focus-stat">Out of sequence — ${inOrderCount}/${arr.length} baseline swings sequence correctly</span>
+        </div>
+        <div class="focus-note">Torso is peaking before (or with) the pelvis instead of after it.</div>
+        ${d.drills.slice(0,2).map(dr=>`
+          <div class="drill-item">
+            <span class="drill-name">${dr.name}</span>
+            <div class="drill-desc">${dr.desc}</div>
+          </div>`).join('')}
+      </div>`;
+  }
+  focus.forEach(s=>{
+    const d = DRILL_DB[s.key];
+    const dir = s.diff >= 0 ? 'above' : 'below';
+    focusHtml += `
+      <div class="focus-card">
+        <div class="focus-head">
+          <h3>${d.label}</h3>
+          <span class="focus-stat">${fmt(s.current,1)}${d.unit} vs ${fmt(s.mean,1)}${d.unit} avg (${fmt(Math.abs(s.diff),1)}${d.unit} ${dir})</span>
+        </div>
+        <div class="focus-note">${s.n < 3 ? 'Ranked against a small baseline — add more swings for a sharper read.' : `${fmt(s.score,1)}x your baseline's typical spread on this metric.`}</div>
+        ${d.drills.slice(0,2).map(dr=>`
+          <div class="drill-item">
+            <span class="drill-name">${dr.name}</span>
+            <div class="drill-desc">${dr.desc}</div>
+          </div>`).join('')}
+      </div>`;
+  });
+  if(!focusHtml){
+    focusHtml = `<div class="chart-card"><div class="label">Nothing flagged</div><div class="sub">This swing is close to your baseline across the board — nice. Check back after your next analyzed swing.</div></div>`;
+  }
+  document.getElementById('drillsFocusList').innerHTML = focusHtml;
+  document.getElementById('drillsOnTarget').innerHTML = onTarget.length
+    ? onTarget.map(s=>`<div class="on-target-row"><i></i>${DRILL_DB[s.key].label} — ${fmt(s.current,1)}${DRILL_DB[s.key].unit} (baseline avg ${fmt(s.mean,1)}${DRILL_DB[s.key].unit})</div>`).join('')
+        + (!seqFlagged ? `<div class="on-target-row"><i></i>Kinematic Sequence — pelvis leads torso, matching baseline</div>` : '')
+    : `<div class="on-target-row" style="color:var(--text-faint);">Nothing landed here this time.</div>`;
+  window.__currentRoutineText = buildRoutineText(focus, seqFlagged, inOrderCount, arr.length, fmt);
+}
+function buildRoutineText(focus, seqFlagged, inOrderCount, baselineN, fmt){
+  const lines = [`Swing Lab — Drill Routine (vs. ${baselineN} baseline swing${baselineN===1?'':'s'})`, ''];
+  if(seqFlagged){
+    lines.push(`KINEMATIC SEQUENCE — out of sequence (${inOrderCount}/${baselineN} baseline swings correct)`);
+    DRILL_DB.sequencing.drills.slice(0,2).forEach(d=>lines.push(`  - ${d.name}: ${d.desc}`));
+    lines.push('');
+  }
+  focus.forEach(s=>{
+    const d = DRILL_DB[s.key];
+    lines.push(`${d.label.toUpperCase()} — ${fmt(s.current,1)}${d.unit} vs ${fmt(s.mean,1)}${d.unit} avg`);
+    d.drills.slice(0,2).forEach(dr=>lines.push(`  - ${dr.name}: ${dr.desc}`));
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+document.getElementById('copyRoutineBtn').addEventListener('click', async ()=>{
+  const text = window.__currentRoutineText || '';
+  if(!text) return;
+  try{
+    await navigator.clipboard.writeText(text);
+  }catch(e){
+    console.warn('Clipboard write failed:', e);
+  }
+  const confirm = document.getElementById('copyRoutineConfirm');
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 1800);
+});
+// ================= ASSESSMENTS TAB =================
+// Report metric definitions — the canonical order + labels + units used in
+// both the on-screen render and the two clipboard exports, so all three
+// stay in lockstep.
+const ASSESS_DEFS = [
+  {key:'sepAtFP', label:'Hip–Shoulder Separation @ Foot Plant', unit:'°'},
+  {key:'strideLen', label:'Stride Length', unit:'% ht'},
+  {key:'comTravel', label:'Center of Mass Travel', unit:'% ht'},
+  {key:'poc', label:'Point of Contact', unit:'% ht', abs:true},
+  {key:'spineTiltContact', label:'Spine Tilt @ Contact', unit:'°'},
+  {key:'frontKneeContact', label:'Front Knee @ Contact', unit:'°'},
+  {key:'headDrift', label:'Head Drift', unit:'% ht'},
+  {key:'explosiveness', label:'Explosiveness', unit:'× avg'},
+];
+// Build a metrics object in the shape computeSwingScore expects from either
+// the live lastMetrics or a stored client-swing entry.
+function metricsFromEntry(e){
+  return {
+    sepAtFP: e.sepAtFP,
+    poc: e.poc,
+    strideLen: e.strideLen,
+    comTravel: e.comTravel,
+    spineTiltContact: e.spineTiltContact,
+    frontKneeContact: e.frontKneeContact,
+    headDrift: e.headDrift,
+    explosiveness: e.explosiveness,
+    inOrder: e.inOrder,
+    segments: [
+      {key:'pelvis', label:'Pelvis', pct: Number.isFinite(e.pelvisPct)?e.pelvisPct:0},
+      {key:'torso', label:'Torso', pct: Number.isFinite(e.torsoPct)?e.torsoPct:0},
+    ],
+  };
+}
+function metricsFromLast(){
+  if(!lastMetrics) return null;
+  return {
+    sepAtFP: lastMetrics.sepAtFP,
+    poc: lastMetrics.poc,
+    strideLen: lastMetrics.strideLen,
+    comTravel: lastMetrics.comTravel,
+    spineTiltContact: lastMetrics.spineTiltContact,
+    frontKneeContact: lastMetrics.frontKneeContact,
+    headDrift: lastMetrics.headDrift,
+    explosiveness: lastMetrics.explosiveness,
+    inOrder: lastMetrics.inOrder,
+    segments: lastMetrics.segments,
+  };
+}
+// Populate the source dropdown: the last analyzed swing (if any) plus every
+// saved client swing, newest first.
+function populateAssessSources(){
+  const sel = document.getElementById('assessSource');
+  const prev = sel.value;
+  const opts = [];
+  if(lastMetrics) opts.push({value:'last', label:'★ Last analyzed swing'});
+  const clients = loadClients().slice().sort((a,b)=>b.ts-a.ts);
+  clients.forEach(e=>{
+    const d = new Date(e.ts);
+    opts.push({value:'client:'+e.ts, label:`${e.client} — ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`});
+  });
+  sel.innerHTML = opts.length
+    ? opts.map(o=>`<option value="${o.value}">${escapeHtml(o.label)}</option>`).join('')
+    : `<option value="">No swings available</option>`;
+  if(prev && opts.some(o=>o.value===prev)) sel.value = prev;
+}
+// Resolve the currently-selected source into {metrics, sourceLabel, defaultName}.
+function resolveAssessSelection(){
+  const sel = document.getElementById('assessSource');
+  const val = sel.value;
+  if(!val) return null;
+  if(val === 'last'){
+    const m = metricsFromLast();
+    if(!m) return null;
+    return { metrics:m, sourceLabel:'Last analyzed swing', defaultName:'' };
+  }
+  if(val.startsWith('client:')){
+    const ts = Number(val.slice(7));
+    const entry = loadClients().find(e=>e.ts===ts);
+    if(!entry) return null;
+    return {
+      metrics: metricsFromEntry(entry),
+      sourceLabel: `Saved swing · ${new Date(entry.ts).toLocaleDateString()}`,
+      defaultName: entry.client || '',
+    };
+  }
+  return null;
+}
+// Compute the per-metric comparison rows against baseline. Returns rows with
+// value, baseline mean, diff, and outlier flag — the shared data behind the
+// on-screen card and both exports.
+function buildAssessRows(metrics){
+  const arr = loadBaseline();
+  const n = arr.length;
+  const rows = ASSESS_DEFS.map(d=>{
+    const raw = metrics[d.key];
+    const cur = d.abs ? Math.abs(raw) : raw;
+    const baseVals = arr.map(e=> d.abs ? Math.abs(e[d.key]) : e[d.key]);
+    const stats = meanStd(baseVals);
+    const hasBase = stats.n > 0;
+    const diff = hasBase ? cur - stats.mean : NaN;
+    const z = (hasBase && stats.std > 0.0001) ? diff/stats.std : 0;
+    const isOutlier = hasBase && n>=3 && Math.abs(z) >= 1.5;
+    return { key:d.key, label:d.label, unit:d.unit, value:cur, mean:hasBase?stats.mean:NaN, diff, hasBase, isOutlier };
+  });
+  return { rows, baselineN:n };
+}
+function assessScoreColor(score){
+  return score >= 85 ? '#5C8A6E' : score >= 65 ? '#3FA7FF' : score >= 50 ? '#C1602E' : '#A23B3B';
+}
+// The single source of truth for the branded report markup. Uses only inline
+// styles + a solid background so it survives being pasted into an email client
+// (which strips <style> blocks and external CSS). shellBg lets the on-screen
+// version sit flush in the dark app while the emailed version stays readable.
+function buildReportHTML(opts){
+  const { metrics, playerName, org, note, sourceLabel } = opts;
+  const fmt = (v,d=1)=> Number.isFinite(v) ? v.toFixed(d) : '—';
+  const { rows, baselineN } = buildAssessRows(metrics);
+  const scoreResult = computeSwingScore(metrics);
+  const score = scoreResult ? scoreResult.score : null;
+  const scoreCol = score!=null ? assessScoreColor(score) : '#5C636B';
+  const dateStr = new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+  const seqText = metrics.inOrder===true
+    ? 'Sequenced correctly — pelvis fires before torso.'
+    : metrics.inOrder===false
+      ? 'Out of sequence — torso peaks before or with the pelvis.'
+      : 'Sequencing not available for this swing.';
+
+  const rowHtml = rows.map(r=>{
+    const valStr = `${fmt(r.value,1)}${r.unit}`;
+    const baseStr = r.hasBase ? `${fmt(r.mean,1)}${r.unit}` : '—';
+    const diffStr = r.hasBase ? `${r.diff>=0?'+':''}${fmt(r.diff,1)}${r.unit}` : '—';
+    const diffCol = !r.hasBase ? '#8A9299' : (r.isOutlier ? '#C0392B' : '#3E4750');
+    const nameCol = r.isOutlier ? '#B23A2E' : '#1C2126';
+    const flag = r.isOutlier ? ' &#9650;' : '';
+    return `<tr>
+      <td style="padding:9px 10px;border-bottom:1px solid #E7E3DB;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:${nameCol};font-weight:600;">${r.label}${flag}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #E7E3DB;font-family:'Courier New',monospace;font-size:13px;color:#1C2126;text-align:right;">${valStr}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #E7E3DB;font-family:'Courier New',monospace;font-size:13px;color:#6B7178;text-align:right;">${baseStr}</td>
+      <td style="padding:9px 10px;border-bottom:1px solid #E7E3DB;font-family:'Courier New',monospace;font-size:13px;color:${diffCol};text-align:right;font-weight:700;">${diffStr}</td>
+    </tr>`;
+  }).join('');
+
+  const scoreBlock = score!=null
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;"><tr>
+         <td style="vertical-align:middle;padding-right:14px;">
+           <div style="width:64px;height:64px;border-radius:50%;background:${scoreCol};text-align:center;line-height:64px;color:#fff;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:24px;">${score}</div>
+         </td>
+         <td style="vertical-align:middle;">
+           <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6B7178;text-transform:uppercase;letter-spacing:1px;">Swing Score</div>
+           <div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3E4750;">out of 100, vs. ${baselineN} baseline swing${baselineN===1?'':'s'}</div>
+         </td>
+       </tr></table>`
+    : `<div style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6B7178;">Log at least one baseline swing to generate a Swing Score.</div>`;
+
+  const noteBlock = (note && note.trim())
+    ? `<div style="margin:0 0 18px;padding:12px 14px;background:#FBF3EC;border-left:3px solid #C1602E;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#4A3524;line-height:1.5;">${escapeHtml(note.trim())}</div>`
+    : '';
+
+  const title = (playerName && playerName.trim()) ? escapeHtml(playerName.trim()) : 'Swing Assessment';
+  const orgLine = (org && org.trim()) ? escapeHtml(org.trim()) : 'Swing Lab';
+
+  // Outer wrapper uses a white card so it reads on any email background.
+  return `<div style="max-width:640px;margin:0 auto;background:#FFFFFF;border:1px solid #E7E3DB;border-radius:10px;overflow:hidden;">
+    <div style="background:#12161A;padding:22px 26px;">
+      <div style="font-family:'Courier New',monospace;font-size:11px;letter-spacing:3px;color:#C1602E;text-transform:uppercase;margin-bottom:8px;">Swing Assessment</div>
+      <div style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:800;color:#F2EFEA;letter-spacing:.3px;">${title}</div>
+      <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9AA0A6;margin-top:6px;">${orgLine} &nbsp;·&nbsp; ${dateStr} &nbsp;·&nbsp; ${escapeHtml(sourceLabel||'')}</div>
+    </div>
+    <div style="padding:22px 26px;">
+      ${noteBlock}
+      <div style="margin-bottom:20px;">${scoreBlock}</div>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:1px solid #E7E3DB;border-radius:8px;overflow:hidden;">
+        <tr style="background:#F4F1EB;">
+          <th style="padding:9px 10px;text-align:left;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.5px;color:#6B7178;text-transform:uppercase;">Metric</th>
+          <th style="padding:9px 10px;text-align:right;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.5px;color:#6B7178;text-transform:uppercase;">Player</th>
+          <th style="padding:9px 10px;text-align:right;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.5px;color:#6B7178;text-transform:uppercase;">Baseline</th>
+          <th style="padding:9px 10px;text-align:right;font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:.5px;color:#6B7178;text-transform:uppercase;">Diff</th>
+        </tr>
+        ${rowHtml}
+      </table>
+      <div style="margin-top:14px;font-family:Arial,Helvetica,sans-serif;font-size:12.5px;color:#3E4750;line-height:1.5;"><strong>Sequencing:</strong> ${seqText}</div>
+      <div style="margin-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;color:#8A9299;line-height:1.5;">&#9650; marks a metric 1.5+ standard deviations from baseline. Measurements are estimated from 2D video normalized to body length — comparative, not lab-grade.</div>
+    </div>
+    <div style="background:#F4F1EB;padding:12px 26px;font-family:'Courier New',monospace;font-size:10.5px;color:#8A9299;letter-spacing:.5px;">Generated by Swing Lab &nbsp;·&nbsp; ${dateStr}</div>
+  </div>`;
+}
+function buildReportText(opts){
+  const { metrics, playerName, org, note, sourceLabel } = opts;
+  const fmt = (v,d=1)=> Number.isFinite(v) ? v.toFixed(d) : '—';
+  const { rows, baselineN } = buildAssessRows(metrics);
+  const scoreResult = computeSwingScore(metrics);
+  const dateStr = new Date().toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'});
+  const lines = [];
+  lines.push('SWING ASSESSMENT');
+  lines.push((playerName && playerName.trim()) ? playerName.trim() : 'Swing Assessment');
+  lines.push(`${(org && org.trim()) ? org.trim() : 'Swing Lab'} · ${dateStr}${sourceLabel?` · ${sourceLabel}`:''}`);
+  lines.push('');
+  if(note && note.trim()){ lines.push(`Note: ${note.trim()}`); lines.push(''); }
+  if(scoreResult) lines.push(`Swing Score: ${scoreResult.score}/100 (vs. ${baselineN} baseline swing${baselineN===1?'':'s'})`);
+  else lines.push('Swing Score: — (log a baseline swing first)');
+  lines.push('');
+  const pad = (s,w)=>{ s=String(s); return s.length>=w ? s : s + ' '.repeat(w-s.length); };
+  lines.push(pad('METRIC',38)+pad('PLAYER',12)+pad('BASE',12)+'DIFF');
+  rows.forEach(r=>{
+    const valStr = `${fmt(r.value,1)}${r.unit}`;
+    const baseStr = r.hasBase ? `${fmt(r.mean,1)}${r.unit}` : '—';
+    const diffStr = r.hasBase ? `${r.diff>=0?'+':''}${fmt(r.diff,1)}${r.unit}` : '—';
+    lines.push(pad(r.label + (r.isOutlier?' *':''),38)+pad(valStr,12)+pad(baseStr,12)+diffStr);
+  });
+  lines.push('');
+  const seqText = metrics.inOrder===true ? 'Sequenced correctly — pelvis before torso.'
+    : metrics.inOrder===false ? 'Out of sequence — torso peaks before/with pelvis.'
+    : 'Sequencing not available.';
+  lines.push(`Sequencing: ${seqText}`);
+  lines.push('');
+  lines.push('* = 1.5+ SD from baseline. Estimated from 2D video, normalized to body length — comparative, not lab-grade.');
+  lines.push(`Generated by Swing Lab · ${dateStr}`);
+  return lines.join('\n');
+}
+let assessLastOpts = null;
+function renderAssessmentsTab(){
+  populateAssessSources();
+  const sel = document.getElementById('assessSource');
+  const empty = document.getElementById('assessEmpty');
+  const content = document.getElementById('assessContent');
+  const subtitle = document.getElementById('assessSubtitle');
+  const hasSources = !!sel.value;
+  if(!hasSources){
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    subtitle.textContent = '';
+    document.getElementById('assessEmptyTitle').textContent = 'Nothing to assess yet';
+    document.getElementById('assessEmptyText').textContent = 'Analyze a swing, or save some client swings, then pick a source above. You\'ll also want a couple of baseline swings logged so there\'s something to compare against.';
+    return;
+  }
+  buildAndShowReport();
+}
+function buildAndShowReport(){
+  const sel = document.getElementById('assessSource');
+  const resolved = resolveAssessSelection();
+  const empty = document.getElementById('assessEmpty');
+  const content = document.getElementById('assessContent');
+  const subtitle = document.getElementById('assessSubtitle');
+  if(!resolved){
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    subtitle.textContent = '';
+    return;
+  }
+  // if the player-name field is empty and the source has a natural name, seed it
+  const nameInput = document.getElementById('assessPlayerName');
+  if(!nameInput.value && resolved.defaultName) nameInput.value = resolved.defaultName;
+  const opts = {
+    metrics: resolved.metrics,
+    playerName: nameInput.value,
+    org: document.getElementById('assessOrg').value,
+    note: document.getElementById('assessNote').value,
+    sourceLabel: resolved.sourceLabel,
+  };
+  assessLastOpts = opts;
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  const baselineN = loadBaseline().length;
+  subtitle.textContent = baselineN>0 ? `vs. ${baselineN} baseline swing${baselineN===1?'':'s'}` : 'no baseline logged yet';
+  // Render with a little padding around the white card so it looks framed in-app
+  document.getElementById('reportRender').innerHTML =
+    `<div style="padding:20px;background:#0B0D10;">${buildReportHTML(opts)}</div>`;
+}
+document.getElementById('assessSource').addEventListener('change', ()=>{
+  // clear the auto-seeded name when switching sources so it re-seeds correctly
+  document.getElementById('assessPlayerName').value = '';
+  buildAndShowReport();
+});
+['assessPlayerName','assessOrg','assessNote'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{ if(assessLastOpts) buildAndShowReport(); });
+});
+document.getElementById('assessRefresh').addEventListener('click', buildAndShowReport);
+async function copyReportForEmail(){
+  if(!assessLastOpts) return;
+  const html = buildReportHTML(assessLastOpts);
+  const text = buildReportText(assessLastOpts);
+  let ok = false;
+  try{
+    if(navigator.clipboard && window.ClipboardItem){
+      const item = new ClipboardItem({
+        'text/html': new Blob([html], {type:'text/html'}),
+        'text/plain': new Blob([text], {type:'text/plain'}),
+      });
+      await navigator.clipboard.write([item]);
+      ok = true;
+    }
+  }catch(e){ console.warn('Rich clipboard failed, falling back:', e); }
+  if(!ok){
+    // Fallback: select a hidden rendering and execCommand copy so the
+    // formatting still carries in browsers without async ClipboardItem.
+    try{
+      const holder = document.createElement('div');
+      holder.style.position='fixed'; holder.style.left='-9999px'; holder.style.top='0';
+      holder.setAttribute('contenteditable','true');
+      holder.innerHTML = html;
+      document.body.appendChild(holder);
+      const range = document.createRange();
+      range.selectNodeContents(holder);
+      const seln = window.getSelection();
+      seln.removeAllRanges(); seln.addRange(range);
+      ok = document.execCommand('copy');
+      seln.removeAllRanges();
+      holder.remove();
+    }catch(e){ console.warn('execCommand copy failed:', e); }
+  }
+  if(!ok){
+    try{ await navigator.clipboard.writeText(text); ok = true; }catch(e){}
+  }
+  const confirm = document.getElementById('copyReportConfirm');
+  confirm.textContent = ok ? 'Copied — paste into your email ✓' : 'Copy failed — try Copy as Text';
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 2400);
+}
+async function copyReportAsText(){
+  if(!assessLastOpts) return;
+  const text = buildReportText(assessLastOpts);
+  let ok=false;
+  try{ await navigator.clipboard.writeText(text); ok=true; }
+  catch(e){
+    try{
+      const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px';
+      document.body.appendChild(ta); ta.select(); ok=document.execCommand('copy'); ta.remove();
+    }catch(err){}
+  }
+  const confirm = document.getElementById('copyReportConfirm');
+  confirm.textContent = ok ? 'Copied as text ✓' : 'Copy failed';
+  confirm.classList.add('show');
+  setTimeout(()=>confirm.classList.remove('show'), 2200);
+}
+function printReport(){
+  if(!assessLastOpts) return;
+  const html = buildReportHTML(assessLastOpts);
+  const w = window.open('', '_blank');
+  if(!w){ alert('Pop-up blocked — allow pop-ups to print/save as PDF.'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Swing Assessment</title></head><body style="margin:0;padding:24px;background:#ffffff;">${html}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{ w.focus(); w.print(); }, 350);
+}
+document.getElementById('copyReportHtmlBtn').addEventListener('click', copyReportForEmail);
+document.getElementById('copyReportTextBtn').addEventListener('click', copyReportAsText);
+document.getElementById('printReportBtn').addEventListener('click', printReport);
+// ---------- tab switching ----------
+document.getElementById('mainTabs').querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('mainTabs').querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.getElementById('analyzeTab').style.display = tab==='analyze' ? 'block' : 'none';
+    document.getElementById('baselineTab').style.display = tab==='baseline' ? 'block' : 'none';
+    document.getElementById('clientsTab').style.display = tab==='clients' ? 'block' : 'none';
+    document.getElementById('drillsTab').style.display = tab==='drills' ? 'block' : 'none';
+    document.getElementById('assessmentsTab').style.display = tab==='assessments' ? 'block' : 'none';
+    if(tab === 'baseline') renderBaselineTab();
+    if(tab === 'clients') renderClientsTab();
+    if(tab === 'drills') renderDrillsTab();
+    if(tab === 'assessments') renderAssessmentsTab();
+  });
+});
+renderBaselineTab();
+renderClientsTab();
+</script>
+</body>
+</html>
